@@ -1,0 +1,81 @@
+7. HTTP Protocol Basics
+
+What is HTTP?
+
+HTTP stands for HyperText Transfer Protocol.
+
+It is the protocol used for communication between clients and servers on the internet.
+
+Whenever you visit a website or use an API, HTTP is being used.
+
+How HTTP Works
+
+Client
+↓
+HTTP Request
+↓
+Server
+↓
+HTTP Response
+↓
+Client
+
+What Does HTTP Do?
+
+HTTP defines:
+
+* How requests are sent
+* How responses are sent
+* How data is transferred
+* How clients and servers communicate
+
+HTTP vs HTTPS
+
+HTTP
+
+* Data is not encrypted
+
+HTTPS
+
+* Data is encrypted
+* More secure
+* Used by modern websites
+
+Example
+
+Browser
+↓
+HTTPS Request
+↓
+google.com
+↓
+HTTPS Response
+↓
+Browser
+
+HTTP Components
+
+Request
+
+* Method
+* URL
+* Headers
+* Body
+
+Response
+
+* Status Code
+* Headers
+* Body
+
+Why HTTP Matters in DRF
+
+DRF APIs communicate using HTTP.
+
+Every API request uses HTTP.
+
+Every API response uses HTTP.
+
+One Sentence to Remember
+
+HTTP is the language clients and servers use to communicate on the internet.

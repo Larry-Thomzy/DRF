@@ -1,0 +1,90 @@
+5. Client-Server Architecture
+
+What is Client-Server Architecture?
+
+Client-Server Architecture is a model where two computers or applications communicate with each other.
+
+The Client sends requests.
+
+The Server receives requests, processes them, and sends back responses.
+
+Think of it like a restaurant:
+
+Customer = Client
+
+Waiter = Request/Response
+
+Kitchen = Server
+
+Food = Response
+
+The customer places an order.
+
+The kitchen prepares the food.
+
+The waiter delivers the food back to the customer.
+
+How Client-Server Communication Works
+
+Client
+↓
+Request
+↓
+Server
+↓
+Response
+↓
+Client
+
+Examples of Clients
+
+* Web Browsers
+* Mobile Apps
+* Desktop Applications
+* Frontend Applications
+
+Examples of Servers
+
+* Django Applications
+* Node.js Applications
+* Laravel Applications
+* Spring Boot Applications
+
+Client-Server Architecture in Our eCommerce Project
+
+Customer
+↓
+Next.js Frontend
+↓
+API Request
+↓
+Django + DRF
+↓
+PostgreSQL Database
+
+Example
+
+Customer clicks "View Products"
+
+Frontend sends:
+
+GET /api/products/
+
+Server processes request.
+
+Database returns products.
+
+Server sends response.
+
+Frontend displays products.
+
+Why is Client-Server Architecture Important?
+
+* Separation of responsibilities
+* Easier maintenance
+* Better scalability
+* Multiple clients can use the same API
+
+One Sentence to Remember
+
+The client requests information and the server provides information.

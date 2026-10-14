@@ -1,0 +1,248 @@
+11. Installing and Configuring Django REST Framework (DRF)
+
+For this project, we are building the backend only.
+
+The frontend will be created separately later.
+
+For now, our ecommerce folder will contain the entire Django backend.
+
+Project Structure:
+
+ecommerce/
+├── ecommerce/
+├── products/
+├── users/
+├── orders/
+├── manage.py
+└── venv/
+
+Step 1: Create the Ecommerce Folder
+
+Create a folder called:
+
+ecommerce
+
+Then open your terminal inside the folder.
+
+Command:
+
+mkdir ecommerce
+
+Move into the folder:
+
+cd ecommerce
+
+Step 2: Create a Virtual Environment
+
+A virtual environment keeps the packages for this project separate from other Python projects.
+
+Command:
+
+python -m venv venv
+
+Step 3: Activate the Virtual Environment
+
+On Windows:
+
+venv\Scripts\activate
+
+If it worked, you should see:
+
+(venv)
+
+at the beginning of your terminal.
+
+Example:
+
+(venv) C:\Users\YourName\ecommerce>
+
+Step 4: Install Django and Django REST Framework
+
+Install both Django and DRF:
+
+pip install django djangorestframework
+
+Django is the main web framework.
+
+Django REST Framework is the toolkit we will use to build our REST API.
+
+Step 5: Create the Django Project
+
+Create the Django project inside the current ecommerce folder:
+
+django-admin startproject ecommerce .
+
+IMPORTANT:
+
+The "." at the end is important.
+
+It tells Django to create the project inside the current folder instead of creating another ecommerce folder inside it.
+
+After this, your structure should look like:
+
+ecommerce/
+├── ecommerce/
+│   ├── **init**.py
+│   ├── settings.py
+│   ├── urls.py
+│   ├── asgi.py
+│   └── wsgi.py
+│
+├── manage.py
+└── venv/
+
+Step 6: Add Django REST Framework to Django
+
+Open:
+
+ecommerce/settings.py
+
+Find:
+
+INSTALLED_APPS = [
+...
+]
+
+Add:
+
+"rest_framework",
+
+So it becomes:
+
+INSTALLED_APPS = [
+...
+"rest_framework",
+]
+
+This tells Django that Django REST Framework is installed and should be used in the project.
+
+Step 7: Check the Django Configuration
+
+Run:
+
+python manage.py check
+
+If everything is configured correctly, you should see:
+
+System check identified no issues (0 silenced).
+
+Step 8: Run the Django Server
+
+Start the development server:
+
+python manage.py runserver
+
+You should see something similar to:
+
+Starting development server at http://127.0.0.1:8000/
+
+Open this address in your browser:
+
+http://127.0.0.1:8000/
+
+If the Django welcome page appears, Django is working correctly.
+
+Step 9: Verify DRF Installation
+
+Run:
+
+pip show djangorestframework
+
+You should see information about the installed DRF package.
+
+You can also run:
+
+pip list
+
+and look for:
+
+djangorestframework
+
+What We Have Done
+
+1. Created the ecommerce folder.
+2. Created a virtual environment.
+3. Activated the virtual environment.
+4. Installed Django.
+5. Installed Django REST Framework.
+6. Created the Django project.
+7. Added rest_framework to INSTALLED_APPS.
+8. Checked the Django configuration.
+9. Started the Django development server.
+10. Verified that DRF is installed.
+
+Final Project Structure
+
+ecommerce/
+│
+├── ecommerce/
+│   ├── **init**.py
+│   ├── settings.py
+│   ├── urls.py
+│   ├── asgi.py
+│   └── wsgi.py
+│
+├── manage.py
+└── venv/
+
+Important Commands to Remember
+
+Create folder:
+
+mkdir ecommerce
+
+Enter folder:
+
+cd ecommerce
+
+Create virtual environment:
+
+python -m venv venv
+
+Activate virtual environment:
+
+venv\Scripts\activate
+
+Install Django and DRF:
+
+pip install django djangorestframework
+
+Create Django project:
+
+django-admin startproject ecommerce .
+
+Check configuration:
+
+python manage.py check
+
+Run server:
+
+python manage.py runserver
+
+Check DRF installation:
+
+pip show djangorestframework
+
+One Sentence to Remember:
+
+We install Django REST Framework with pip, add "rest_framework" to Django's INSTALLED_APPS, and then Django is ready for us to start building APIs.
+
+eCommerce Project Application:
+
+At this stage, we have only created the foundation.
+
+We have NOT created:
+
+* Products
+* Users
+* Orders
+* Cart
+* Payments
+* Serializers
+* API endpoints
+
+We will build these gradually as we learn each DRF topic.
+
+Next Topic:
+
+12. Setting Up the DRF Project

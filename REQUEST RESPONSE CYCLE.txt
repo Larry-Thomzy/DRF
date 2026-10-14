@@ -1,0 +1,85 @@
+6. Request-Response Cycle
+
+What is the Request-Response Cycle?
+
+The Request-Response Cycle is the process that occurs whenever a client communicates with a server.
+
+Everything starts with a request.
+
+Everything ends with a response.
+
+Basic Flow
+
+Client
+↓
+Request
+↓
+Server
+↓
+Processing
+↓
+Response
+↓
+Client
+
+What is a Request?
+
+A request is a message sent by the client asking the server to do something.
+
+Examples:
+
+GET /api/products/
+
+POST /api/products/
+
+DELETE /api/products/1/
+
+What is a Response?
+
+A response is the message sent back by the server after processing the request.
+
+Example:
+
+{
+"id": 1,
+"name": "iPhone",
+"price": 500000
+}
+
+Request-Response Cycle in DRF
+
+Frontend
+↓
+Request
+↓
+URL
+↓
+View
+↓
+Database
+↓
+Serializer
+↓
+Response
+↓
+Frontend
+
+eCommerce Example
+
+Customer clicks:
+
+"View Products"
+
+Request:
+
+GET /api/products/
+
+Server retrieves products.
+
+Server returns JSON.
+
+Frontend displays products.
+
+One Sentence to Remember
+
+A request asks for something, and a response delivers the result.

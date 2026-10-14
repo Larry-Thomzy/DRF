@@ -1,0 +1,91 @@
+8. HTTP Methods
+
+What are HTTP Methods?
+
+HTTP Methods tell the server what action the client wants to perform.
+
+The Main HTTP Methods
+
+GET
+
+Used to retrieve data.
+
+Example:
+
+GET /api/products/
+
+POST
+
+Used to create new data.
+
+Example:
+
+POST /api/products/
+
+PUT
+
+Used to completely replace existing data.
+
+Example:
+
+PUT /api/products/1/
+
+PATCH
+
+Used to partially update existing data.
+
+Example:
+
+PATCH /api/products/1/
+
+DELETE
+
+Used to remove data.
+
+Example:
+
+DELETE /api/products/1/
+
+CRUD Mapping
+
+Create → POST
+
+Read → GET
+
+Update → PUT/PATCH
+
+Delete → DELETE
+
+PUT vs PATCH
+
+PUT
+
+* Full update
+* Replaces entire object
+
+PATCH
+
+* Partial update
+* Updates only specified fields
+
+eCommerce Examples
+
+View Products
+
+GET /api/products/
+
+Create Product
+
+POST /api/products/
+
+Update Product
+
+PATCH /api/products/1/
+
+Delete Product
+
+DELETE /api/products/1/
+
+One Sentence to Remember
+
+HTTP methods tell the server what action should be performed.

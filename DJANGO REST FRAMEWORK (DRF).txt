@@ -1,0 +1,214 @@
+3. Django REST Framework (DRF)
+
+What is Django?
+
+Django is a Python web framework used to build web applications.
+
+For example, you can use Django to build:
+
+* Websites
+* User accounts
+* Admin dashboards
+* E-commerce systems
+* Blogs
+* APIs
+
+Think of Django as the main toolbox for building a web application with Python.
+
+What is Django REST Framework?
+
+Django REST Framework (DRF) is a toolkit built on top of Django that makes it easier to build APIs.
+
+In simple terms:
+
+Django → builds web applications
+DRF → helps Django build APIs
+
+For example, our eCommerce frontend might need product information.
+
+The frontend can ask:
+
+GET /api/products/
+
+DRF helps Django process that request and return something like:
+
+[
+{
+"id": 1,
+"name": "iPhone",
+"price": 500000
+},
+{
+"id": 2,
+"name": "Samsung",
+"price": 400000
+}
+]
+
+The frontend can then use that data to display the products.
+
+Why do we need DRF?
+
+Django can technically create APIs without DRF, but doing everything yourself would require more work.
+
+DRF gives you tools for things like:
+
+* Creating API endpoints
+* Handling HTTP requests
+* Converting Django data into JSON
+* Validating incoming data
+* Authentication
+* Permissions
+* CRUD operations
+* API testing
+
+So instead of building all these things yourself, DRF gives you ready-made tools.
+
+Django vs DRF
+
+Think of it like this:
+
+Python
+↓
+Django
+↓
+Django REST Framework
+↓
+REST API
+
+Or even simpler:
+
+Django = the foundation
+DRF = tools for building APIs with Django
+
+What does DRF do in our eCommerce project?
+
+Suppose we have this product in our database:
+
+## Product
+
+id: 1
+name: iPhone
+price: 500000
+stock: 10
+
+Our frontend can't simply access the Python object directly.
+
+DRF helps turn that information into something the frontend can understand:
+
+{
+"id": 1,
+"name": "iPhone",
+"price": 500000,
+"stock": 10
+}
+
+The frontend can then display:
+
+iPhone
+₦500,000
+10 available
+
+The Main DRF Tools We'll Learn
+
+1. Serializers
+
+Serializers convert Django/Python data into JSON and can also convert incoming data back into Python/Django data.
+
+Python/Django
+↕
+Serializer
+↕
+JSON
+
+2. API Views
+
+API Views determine what happens when someone sends:
+
+GET
+POST
+PUT
+PATCH
+DELETE
+
+3. URLs
+
+URLs determine where the API can be accessed.
+
+Examples:
+
+/api/products/
+/api/users/
+/api/orders/
+
+4. Authentication
+
+Authentication determines who the user is.
+
+Example:
+
+Login → JWT Token
+
+5. Permissions
+
+Permissions determine what the user is allowed to do.
+
+Example:
+
+Customer → View products
+Admin → Create products
+
+The Big Picture
+
+Our eCommerce system will eventually look roughly like this:
+
+Customer
+↓
+React / Frontend
+↓
+REST API
+↓
+DRF
+↓
+Django
+↓
+Database
+
+When the customer wants products:
+
+Frontend
+↓
+GET /api/products/
+↓
+DRF
+↓
+Django
+↓
+Database
+↓
+Django
+↓
+DRF
+↓
+JSON
+↓
+Frontend
+
+The one sentence you should remember:
+
+Django REST Framework is a toolkit built on Django that makes it easier to create REST APIs using Python.
+
+Topic 3 Checklist
+
+You should understand:
+
+* What Django is
+* What DRF is
+* Why DRF is used
+* Django vs DRF
+* How DRF fits into our eCommerce project
+* What Serializers, Views, URLs, Authentication and Permissions generally do
+
+Next Topic:
+
+4. Why use DRF instead of plain Django?

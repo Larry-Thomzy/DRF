@@ -1,0 +1,99 @@
+10. JSON Fundamentals
+
+What is JSON?
+
+JSON stands for JavaScript Object Notation.
+
+It is the most common format used to exchange data in APIs.
+
+JSON is simply text that follows a specific structure.
+
+Example
+
+{
+"id": 1,
+"name": "iPhone",
+"price": 500000
+}
+
+JSON Objects
+
+An object contains key-value pairs.
+
+Example
+
+{
+"name": "Larry",
+"age": 19
+}
+
+JSON Arrays
+
+An array contains multiple values.
+
+Example
+
+[
+"Apple",
+"Samsung",
+"Infinix"
+]
+
+Nested JSON
+
+JSON can contain other objects and arrays.
+
+Example
+
+{
+"id": 1,
+"name": "iPhone",
+"category": {
+"id": 2,
+"name": "Phones"
+}
+}
+
+JSON vs Python Dictionary
+
+JSON
+
+* Text format
+* Uses double quotes
+* Uses true, false, null
+
+Python Dictionary
+
+* Python object
+* Can use single quotes
+* Uses True, False, None
+
+Example JSON
+
+{
+"name": "Larry"
+}
+
+Example Python Dictionary
+
+{
+'name': 'Larry'
+}
+
+Why JSON Matters in DRF
+
+DRF usually receives data as JSON.
+
+DRF usually sends data as JSON.
+
+Frontend
+↓
+JSON
+↓
+DRF
+↓
+Database
+
+One Sentence to Remember
+
+JSON is the standard format used to exchange data between APIs and applications.

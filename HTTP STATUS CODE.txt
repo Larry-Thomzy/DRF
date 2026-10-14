@@ -1,0 +1,85 @@
+9. HTTP Status Codes
+
+What are HTTP Status Codes?
+
+Status codes tell the client whether a request was successful or unsuccessful.
+
+Common Success Codes
+
+200 OK
+
+Request succeeded.
+
+201 Created
+
+New resource created successfully.
+
+204 No Content
+
+Request succeeded but no data returned.
+
+Common Client Error Codes
+
+400 Bad Request
+
+The request contains invalid data.
+
+401 Unauthorized
+
+User is not authenticated.
+
+403 Forbidden
+
+User lacks permission.
+
+404 Not Found
+
+Requested resource does not exist.
+
+Common Server Error Codes
+
+500 Internal Server Error
+
+An error occurred on the server.
+
+Examples
+
+Successful Product Request
+
+GET /api/products/
+
+Response:
+
+200 OK
+
+Product Created
+
+POST /api/products/
+
+Response:
+
+201 Created
+
+Missing Product
+
+GET /api/products/999/
+
+Response:
+
+404 Not Found
+
+Unauthenticated User
+
+POST /api/products/
+
+Response:
+
+401 Unauthorized
+
+Why Status Codes Matter
+
+They help clients understand what happened after a request was processed.
+
+One Sentence to Remember
+
+Status codes tell the client the outcome of a request.

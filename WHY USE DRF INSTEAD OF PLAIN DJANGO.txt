@@ -1,0 +1,270 @@
+4. Why Use DRF Instead of Plain Django?
+
+What is Plain Django?
+
+Django can build complete web applications by itself.
+
+For example, Django can handle:
+
+* HTML pages
+* Forms
+* Users
+* Database operations
+* Authentication
+* Admin dashboards
+
+A traditional Django application might work like this:
+
+Browser
+↓
+Django
+↓
+Database
+↓
+Django
+↓
+HTML Page
+↓
+Browser
+
+Django generates the webpage and sends it to the browser.
+
+What is the Problem?
+
+Modern applications often have a separate frontend.
+
+For example, our eCommerce project could have:
+
+React/Next.js Frontend
+↓
+API
+↓
+Django Backend
+↓
+Database
+
+The frontend doesn't need Django to generate HTML pages.
+
+It needs data.
+
+For example:
+
+{
+"name": "iPhone",
+"price": 500000
+}
+
+This is where DRF becomes useful.
+
+What Does DRF Give Us?
+
+DRF provides tools that make creating APIs with Django much easier.
+
+Instead of manually handling everything, DRF provides things like:
+
+* Serializers
+* API Views
+* ViewSets
+* Routers
+* Authentication
+* Permissions
+* Validation
+* Browsable API
+* Pagination
+* Filtering
+
+These tools help us build APIs faster and in a more organized way.
+
+Django Without DRF
+
+You could build an API using normal Django.
+
+You would have to handle more of the API functionality yourself.
+
+For example:
+
+Request
+↓
+Django View
+↓
+Get Database Data
+↓
+Convert Data
+↓
+Create JSON Response
+↓
+Send Response
+
+This is possible, but it can become repetitive as the application grows.
+
+Django + DRF
+
+With DRF:
+
+Request
+↓
+DRF
+↓
+View
+↓
+Serializer
+↓
+Database
+↓
+Serializer
+↓
+JSON Response
+
+DRF handles many common API tasks for us.
+
+Simple Example
+
+Suppose we want to return all products.
+
+Without DRF, we would need to manually retrieve the products, convert them into a format suitable for JSON, and construct the response.
+
+With DRF, we can use a serializer to handle the conversion.
+
+For example:
+
+ProductSerializer(products, many=True)
+
+The result can then be returned as an API response.
+
+Why This Matters for Our eCommerce Project
+
+Our eCommerce project will eventually have a frontend and backend.
+
+The frontend might be built with:
+
+React / Next.js
+
+The backend will be:
+
+Django + DRF
+
+The database will contain things like:
+
+* Users
+* Products
+* Categories
+* Cart
+* Orders
+* Payments
+* Reviews
+
+The frontend communicates with these resources through the DRF API.
+
+For example:
+
+GET /api/products/
+POST /api/products/
+GET /api/products/1/
+PATCH /api/products/1/
+DELETE /api/products/1/
+
+DRF makes creating and managing these API endpoints much easier.
+
+The Simple Difference
+
+Django
+↓
+General web application framework
+
+DRF
+↓
+Tools for building APIs with Django
+
+So:
+
+Django can build APIs, but DRF provides specialized tools that make building REST APIs easier, faster, and more structured.
+
+When Would You Use Plain Django?
+
+Plain Django is useful when you're building a traditional server-rendered website where Django generates the HTML pages.
+
+Example:
+
+Browser
+↓
+Django
+↓
+HTML
+↓
+Browser
+
+When Would You Use DRF?
+
+DRF is particularly useful when your backend needs to provide data to:
+
+* React
+* Next.js
+* Vue
+* Mobile apps
+* Other applications
+* Third-party services
+
+Example:
+
+React
+↓
+DRF API
+↓
+Django
+↓
+Database
+
+eCommerce Project Application
+
+For our project:
+
+Next.js Frontend
+↓
+REST API
+↓
+Django + DRF
+↓
+PostgreSQL
+
+DRF will handle the API side of our eCommerce backend.
+
+For example:
+
+Products
+
+GET    /api/products/
+GET    /api/products/1/
+POST   /api/products/
+PATCH  /api/products/1/
+DELETE /api/products/1/
+
+Orders
+
+GET    /api/orders/
+POST   /api/orders/
+GET    /api/orders/1/
+
+Users
+
+POST /api/register/
+POST /api/login/
+
+One Sentence to Remember
+
+Use Django for building web applications, and use DRF when you want Django to provide a REST API to other applications or frontends.
+
+Topic 4 Checklist
+
+You should understand:
+
+* What plain Django does
+* Why APIs are needed for modern frontends
+* What DRF adds to Django
+* Django vs Django + DRF
+* When to use plain Django
+* When to use DRF
+* Why DRF is useful for our eCommerce project
+
+Next Topic:
+
+5. Client-Server Architecture

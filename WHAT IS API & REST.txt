@@ -1,0 +1,47 @@
+‎A REST API is a simple way for programs to talk to each other over the internet using standard web addresses (URLs) and HTTP methods (like GET, POST, PUT, DELETE). Full meaning of REST is Representational State Transfer
+‎
+‎HTTP – HyperText Transfer Protocol
+‎HTTP stands for HyperText Transfer Protocol.
+‎It is the main protocol responsible for transferring data between a client (like a browser or mobile app) and a server on the internet. Whenever you open a website, send a form, or use an API, HTTP (or its secure version HTTPS) is working behind the scenes to move the information.
+‎HTTP has different methods (also called verbs) that tell the server exactly what action you want to perform on a resource. These methods are the foundation of how REST APIs work.
+‎The main HTTP methods
+‎GET – Used for retrieving or reading data from the server.
+‎It should never change anything on the server.
+‎Example: Getting a list of users or loading a webpage.
+‎POST – Used for creating new data on the server.
+‎You send information in the body of the request, and the server creates a new resource.
+‎Example: Creating a new user account or submitting a form.
+‎PUT – Used for updating or completely replacing an existing resource.
+‎You usually send the full updated data, and the server replaces the old version.
+‎Example: Updating a user’s entire profile.
+‎DELETE – Used for removing a resource from the server.
+‎Example: Deleting a user account or removing a post.
+‎These four methods (GET, POST, PUT, DELETE) cover the most common actions needed in web applications and REST APIs
+‎
+‎Difference between PUT and PATCH
+‎Both PUT and PATCH are used to update existing data on the server, but they work in different ways.
+‎PUT is used for a full replacement of a resource. When you send a PUT request, you are expected to send the complete updated version of the object. The server replaces the old resource with the new one you provided. If you leave out any fields, those fields may be removed or reset to empty, depending on how the API is designed. In simple terms, PUT means “overwrite everything with this new version.”
+‎PATCH is used for a partial update. With PATCH, you only send the specific fields you want to change. The server updates only those fields and leaves the rest of the resource unchanged. This is useful when you only need to modify one or two pieces of information without touching the rest.
+‎In short, use PUT when you want to replace the entire resource, and use PATCH when you only want to update some parts of it.
+‎
+‎
+‎**Difference between JSON and Python Dictionary**
+‎
+‎JSON and Python dictionaries look very similar, which is why many beginners mix them up, but they are not the same thing.
+‎
+‎JSON stands for JavaScript Object Notation. It is a text-based data format used to store and exchange data between different systems. JSON is language-independent, meaning it can be used by almost any programming language. When data is sent over the internet in REST APIs, it is usually sent as JSON text.
+‎
+‎A Python dictionary is a data structure that exists only inside the Python programming language. It is used to store key-value pairs while a Python program is running.
+‎
+‎The main differences are:
+‎
+‎JSON is just text. It is a way of writing data so that different programs can understand it. A Python dictionary is an actual object that lives in your computer’s memory while the Python code is running.
+‎
+‎In JSON, all keys must be written as strings with double quotes. In a Python dictionary, keys can be strings, numbers, or other immutable types, and you can use single or double quotes.
+‎
+‎JSON uses lowercase true, false, and null. Python dictionaries use True, False, and None (with capital letters).
+‎
+‎JSON cannot contain comments or trailing commas. Python dictionaries are more flexible and allow both.
+‎
+‎When you work with APIs in Python, you usually receive JSON text from the server, then convert that text into a Python dictionary so you can easily work with the data. When you want to send data back, you convert the Python dictionary into JSON text again.
+‎
