@@ -1,0 +1,340 @@
+# TOPIC 13.11 — RETRIEVING A SINGLE PRODUCT BY ID
+
+## 1. Introduction
+
+In the previous topic, we created an API endpoint that retrieves all products from our database.
+
+In this topic, we will build an endpoint that retrieves one specific product using its primary key.
+
+Examples:
+
+- `GET /api/products/` — retrieves all products.
+- `GET /api/products/1/` — retrieves the product whose primary key is `1`.
+- `GET /api/products/2/` — retrieves the product whose primary key is `2`.
+- `GET /api/products/999/` — returns a `404 Not Found` response if product `999` does not exist.
+
+## 2. What Is a URL Parameter?
+
+A URL parameter is a value included in a URL that a view can use to determine what information to retrieve or what action to perform.
+
+For example:
+
+`/api/products/5/`
+
+Here, `5` is the value identifying the product we want to retrieve.
+
+In Django, we can capture this value using a URL pattern:
+
+```python
+path("products/<int:pk>/", product_detail)
+```
+
+Explanation:
+
+- `products/` is the URL path.
+- `<int:pk>` tells Django to capture an integer and pass it to the view using the parameter name `pk`.
+- `product_detail` is the view that handles the request.
+
+The parameter name in the URL pattern must match the corresponding argument name in the view.
+
+## 3. Creating the Product Detail View
+
+Open `products/views.py` and add the following code while keeping the existing `product_list` view.
+
+```python
+from django.shortcuts import get_object_or_404
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+
+from .models import Product
+from .serializers import ProductSerializer
+
+
+@api_view(["GET"])
+def product_list(request):
+    products = Product.objects.all()
+    serializer = ProductSerializer(products, many=True)
+
+    return Response(serializer.data)
+
+
+@api_view(["GET"])
+def product_detail(request, pk):
+    product = get_object_or_404(Product, pk=pk)
+    serializer = ProductSerializer(product)
+
+    return Response(serializer.data)
+```
+
+### Explanation of the code
+
+**A. Importing `get_object_or_404`**
+
+```python
+from django.shortcuts import get_object_or_404
+```
+
+This imports a Django shortcut that attempts to retrieve an object from the database.
+
+If the object exists, it returns it. If it does not exist, Django raises an HTTP `404 Not Found` exception.
+
+**B. Defining the view**
+
+```python
+def product_detail(request, pk):
+```
+
+- `request` represents the incoming HTTP request.
+- `pk` receives the value captured from the URL.
+- `pk` stands for primary key.
+
+For example, when the client requests `/api/products/5/`, the view receives `pk=5`.
+
+**C. Retrieving the product**
+
+```python
+product = get_object_or_404(Product, pk=pk)
+```
+
+This tells Django to retrieve the `Product` whose primary key matches the value received from the URL.
+
+The first `pk` specifies the model field lookup. The second `pk` is the Python variable containing the value from the URL.
+
+If the product exists, it is assigned to the `product` variable. Otherwise, Django returns a 404 response.
+
+**D. Serializing one product**
+
+```python
+serializer = ProductSerializer(product)
+```
+
+The serializer converts the product model instance into a representation suitable for an API response.
+
+We do not use `many=True` because we are serializing one product rather than a collection of products.
+
+**E. Returning the response**
+
+```python
+return Response(serializer.data)
+```
+
+This returns the serialized product data through Django REST Framework's response system, which renders it as JSON under the default configuration.
+
+## 4. Connecting the View to a URL
+
+Open `products/urls.py` and configure the URL patterns as follows:
+
+```python
+from django.urls import path
+from .views import product_list, product_detail
+
+urlpatterns = [
+    path("products/", product_list, name="product-list"),
+    path("products/<int:pk>/", product_detail, name="product-detail"),
+]
+```
+
+Our project-level URL configuration already includes the application URLs under the `api/` prefix:
+
+```python
+path("api/", include("products.urls"))
+```
+
+Django combines these URL segments to produce the full endpoint:
+
+`/api/products/5/`
+
+When this URL is requested, Django captures `5`, passes it to `product_detail` as `pk`, and retrieves the matching product.
+
+## 5. Understanding `pk` and `id`
+
+This is an important distinction in Django.
+
+### A. What is `pk`?
+
+`pk` is Django's standard shortcut for referring to a model's primary key.
+
+A primary key uniquely identifies a record in a database table.
+
+In our Product model, Django automatically creates an `id` field as the primary key because we did not explicitly define another primary key.
+
+### B. Is `pk` a database column?
+
+No. In our model, `id` is the actual field name, while `pk` is Django's generic way of referring to the primary key field.
+
+For example, these two queries are equivalent when `id` is the primary key:
+
+```python
+Product.objects.get(id=1)
+```
+
+```python
+Product.objects.get(pk=1)
+```
+
+Both retrieve the product whose primary key is `1`, assuming it exists.
+
+The advantage of `pk` is that it continues to work if the model uses a different primary key field, such as a UUID.
+
+### C. Can we use `id` or `no` instead of `pk` in the URL?
+
+Yes. The name of the URL parameter is your choice, provided the view argument matches it.
+
+For example, we could use `id`:
+
+```python
+path("products/<int:id>/", product_detail)
+```
+
+The view would then be:
+
+```python
+def product_detail(request, id):
+    product = get_object_or_404(Product, pk=id)
+    serializer = ProductSerializer(product)
+
+    return Response(serializer.data)
+```
+
+We could also use `no`:
+
+```python
+path("products/<int:no>/", product_detail)
+```
+
+With the corresponding view:
+
+```python
+def product_detail(request, no):
+    product = get_object_or_404(Product, pk=no)
+    serializer = ProductSerializer(product)
+
+    return Response(serializer.data)
+```
+
+All these versions can work.
+
+However, notice that the `pk=` keyword in `get_object_or_404()` remains unchanged. It refers to Django's primary-key lookup, while the variable on the right contains the value captured from the URL.
+
+For consistency, using `pk` or `id` in URL parameters is recommended.
+
+## 6. Verifying the Primary Key in Django Shell
+
+### Command 1: Open the shell
+
+```bash
+python manage.py shell
+```
+
+**Purpose:** Opens an interactive Python environment connected to the Django project.
+
+### Command 2: Import the model
+
+```python
+from products.models import Product
+```
+
+**Purpose:** Makes the Product model available in the shell.
+
+### Command 3: Check the primary key field name
+
+```python
+Product._meta.pk.name
+```
+
+Expected output:
+
+```python
+'id'
+```
+
+**Purpose:** Displays the actual name of the model's primary key field.
+
+### Command 4: Retrieve a product using `pk`
+
+```python
+Product.objects.get(pk=1)
+```
+
+**Purpose:** Retrieves the product whose primary key is `1`. This raises a `DoesNotExist` exception if no matching record exists.
+
+### Command 5: Retrieve the same product using `id`
+
+```python
+Product.objects.get(id=1)
+```
+
+**Purpose:** Retrieves the product using the explicit `id` field. This works because `id` is our model's primary key field.
+
+These two queries should retrieve the same product if ID `1` exists.
+
+## 7. Testing the API Endpoint
+
+Start the development server if it is not already running:
+
+```bash
+python manage.py runserver
+```
+
+Test the following URLs in your browser.
+
+**Test A: Existing product**
+
+`http://127.0.0.1:8000/api/products/1/`
+
+Expected result: JSON data for the product with primary key `1`, if it exists.
+
+**Test B: Another existing product**
+
+`http://127.0.0.1:8000/api/products/2/`
+
+Expected result: JSON data for the product with primary key `2`, if it exists.
+
+**Test C: Nonexistent product**
+
+`http://127.0.0.1:8000/api/products/999/`
+
+Expected result: `404 Not Found`, provided no product has primary key `999`.
+
+Note that primary key values may have gaps if records have been deleted. The IDs in these examples are not guaranteed to exist in every database.
+
+## 8. Understanding the Difference Between the Two Views
+
+| Feature | `product_list` | `product_detail` |
+|---|---|---|
+| Purpose | Retrieves all products | Retrieves one product |
+| ORM operation | `Product.objects.all()` | `get_object_or_404(Product, pk=pk)` |
+| Number of objects | Multiple | One |
+| Serializer | `ProductSerializer(products, many=True)` | `ProductSerializer(product)` |
+| URL | `/api/products/` | `/api/products/1/` |
+| Missing record | Not applicable to an individual lookup | Returns 404 if the requested product is missing |
+
+## 9. Commands and Concepts — Quick Reference
+
+| Command or concept | Purpose |
+|---|---|
+| `python manage.py shell` | Opens Django's interactive shell. |
+| `from products.models import Product` | Imports the Product model. |
+| `Product._meta.pk.name` | Reveals the primary key field's actual name. |
+| `Product.objects.get(pk=1)` | Retrieves a product by its primary key. |
+| `Product.objects.get(id=1)` | Retrieves a product using the `id` field. |
+| `get_object_or_404()` | Retrieves an object or raises a 404 response. |
+| `<int:pk>` | Captures an integer from a URL and passes it to the view as `pk`. |
+| `many=True` | Tells a serializer to handle multiple objects. |
+| `Response(serializer.data)` | Returns serialized data through DRF's response system. |
+
+## 10. Practical Exercise
+
+1. Visit the endpoint for two products that exist in your database.
+2. Request a product ID that does not exist and confirm that the API returns 404.
+3. Explain the difference between `pk` and `id`.
+4. Explain why the detail view uses `get_object_or_404()` rather than `Product.objects.all()`.
+5. Explain why `many=True` is unnecessary when serializing one product.
+
+### Learning Outcome
+
+By the end of this topic, you should understand URL parameters, primary keys, retrieving individual database records, serializing a single object, and handling missing records with HTTP 404 responses.
+
+**Next topic: 13.12 — Creating Products Through the API with POST**
+
+We will learn how to accept data from a client, access it through `request.data`, validate it using our serializer, save a new product, and return an appropriate HTTP status code.

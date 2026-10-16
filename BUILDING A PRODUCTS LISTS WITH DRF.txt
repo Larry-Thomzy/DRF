@@ -1,0 +1,363 @@
+# TOPIC 13.10 — BUILDING A PRODUCT LIST API WITH DJANGO REST FRAMEWORK
+
+## 1. What Are We Building?
+
+We are building an API endpoint that retrieves all products saved in our database and returns them as JSON.
+
+For example, when a client visits:
+
+`http://127.0.0.1:8000/api/products/`
+
+The API returns a list of products, including their names, descriptions, prices, stock quantities, and timestamps.
+
+**What is an API endpoint?**
+
+An endpoint is a URL through which a client can interact with a particular resource or feature of an application.
+
+In our project, `/api/products/` is the endpoint for retrieving products.
+
+## 2. Understanding the Product Model
+
+Our `Product` model defines the structure of the product records stored in the database.
+
+The model contains these fields:
+
+- `id`: The unique identifier Django automatically creates for each product.
+- `name`: The product's name.
+- `description`: Details about the product.
+- `price`: The product's price.
+- `stock`: The available quantity.
+- `created_at`: The date and time the product was created.
+- `updated_at`: The date and time the product was last updated.
+
+The model acts as a blueprint for the product records in our database.
+
+## 3. Creating Test Products in Django Shell
+
+Before testing our API, we need products in our database.
+
+### Command 1: Open the Django shell
+
+```bash
+python manage.py shell
+```
+
+**Purpose:** Opens an interactive Python environment connected to our Django project. We can use it to interact directly with our models and database.
+
+### Command 2: Import the Product model
+
+```python
+from products.models import Product
+```
+
+**Purpose:** Makes the `Product` model available in the current shell session so we can create, retrieve, update, or delete product records.
+
+### Command 3: Create a product
+
+```python
+Product.objects.create(
+    name="Samsung S24 Ultra",
+    description="Samsung's flagship of the year 2024",
+    price="12500.00",
+    stock=10
+)
+```
+
+**Purpose:** Creates a new product record in the database.
+
+Explanation:
+
+- `Product` is our model class.
+- `objects` is Django's model manager, which provides methods for interacting with the database.
+- `create()` inserts a new record.
+- `name`, `description`, `price`, and `stock` are the fields we are supplying.
+- `price="12500.00"` supplies a decimal value as a string, which is appropriate for this model field.
+
+Use the actual price you intend to store for the product.
+
+### Command 4: Retrieve all products
+
+```python
+Product.objects.all()
+```
+
+**Purpose:** Retrieves all product records and returns a Django QuerySet.
+
+A QuerySet represents the results of a database query. It is not the same thing as a JSON response.
+
+### Command 5: Count all products
+
+```python
+Product.objects.count()
+```
+
+**Purpose:** Returns the total number of product records in the database.
+
+### Command 6: Exit the Django shell
+
+```python
+exit()
+```
+
+**Purpose:** Leaves the interactive Python shell and returns you to your normal terminal.
+
+## 4. Understanding the Errors We Encountered
+
+### Error 1: `ModuleNotFoundError: No module named 'products.model'`
+
+The incorrect command was:
+
+```python
+from products.model import Product
+```
+
+The problem was the word `model`. Our file is named `models.py`, with an `s`.
+
+The correct command is:
+
+```python
+from products.models import Product
+```
+
+Python imports modules using their actual module names. Since our model is defined in `products/models.py`, we import it through `products.models`.
+
+### Error 2: `NameError: name 'Python' is not defined`
+
+The incorrect command was:
+
+```python
+Python.objects.create(...)
+```
+
+We used `Python` instead of `Product`.
+
+Python is the programming language. `Product` is the model class we created in our Django application.
+
+The correct command is:
+
+```python
+Product.objects.create(...)
+```
+
+Python is case-sensitive, so names must be written correctly.
+
+### Question: How Do I Move to the Next Line in Django Shell?
+
+When typing commands manually inside the standard Django shell, press `Enter`.
+
+For example:
+
+```python
+Product.objects.create(
+    name="Samsung S24 Ultra",
+    description="Samsung's flagship",
+    price="12500.00",
+    stock=10
+)
+```
+
+When Python encounters an opening parenthesis without its matching closing parenthesis, it knows the statement is incomplete. It displays the continuation prompt `...`, allowing you to type the next line.
+
+Once you close the parenthesis and press `Enter`, Python executes the statement.
+
+`Shift + Enter` is not normally needed in the standard Django shell.
+
+You can also copy and paste a complete multiline command into the shell.
+
+**Important:** Pressing `Enter` on a complete command executes it immediately. Be careful not to execute a database operation twice accidentally, because that could create duplicate records.
+
+## 5. Creating the Product List View
+
+Open `products/views.py` and add the following code:
+
+```python
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+
+from .models import Product
+from .serializers import ProductSerializer
+
+
+@api_view(["GET"])
+def product_list(request):
+    products = Product.objects.all()
+    serializer = ProductSerializer(products, many=True)
+
+    return Response(serializer.data)
+```
+
+### Explanation of the code
+
+**Importing `api_view`**
+
+```python
+from rest_framework.decorators import api_view
+```
+
+This imports a DRF decorator that allows us to specify which HTTP methods a function-based API view accepts.
+
+**Importing `Response`**
+
+```python
+from rest_framework.response import Response
+```
+
+This imports DRF's response class, which works with DRF's rendering system to return API responses, such as JSON.
+
+**Importing the model and serializer**
+
+```python
+from .models import Product
+from .serializers import ProductSerializer
+```
+
+These imports give our view access to the Product model and ProductSerializer. The dot means we are importing from the current application package.
+
+**Allowing GET requests**
+
+```python
+@api_view(["GET"])
+```
+
+This tells DRF that the view accepts GET requests. GET is an HTTP method commonly used to retrieve information.
+
+**Retrieving products**
+
+```python
+products = Product.objects.all()
+```
+
+This retrieves all product records from the database.
+
+**Serializing the products**
+
+```python
+serializer = ProductSerializer(products, many=True)
+```
+
+The serializer converts the model records into a representation suitable for an API response.
+
+We use `many=True` because we are serializing multiple products. Without it, the serializer expects a single object rather than a collection.
+
+**Returning the response**
+
+```python
+return Response(serializer.data)
+```
+
+`serializer.data` provides the serialized data. DRF then renders the response, usually as JSON when using its default configuration.
+
+## 6. Connecting the View to a URL
+
+Create or open `products/urls.py` and add:
+
+```python
+from django.urls import path
+from .views import product_list
+
+urlpatterns = [
+    path("products/", product_list, name="product-list"),
+]
+```
+
+### Explanation
+
+- `path()` connects a URL pattern to a view.
+- `"products/"` is the URL path within this application's URL configuration.
+- `product_list` is the view that handles the request.
+- `name="product-list"` gives the route a name that can be referenced elsewhere in Django.
+
+Next, open `ecommerce/urls.py` and configure the application URLs:
+
+```python
+from django.contrib import admin
+from django.urls import include, path
+
+urlpatterns = [
+    path("admin/", admin.site.urls),
+    path("api/", include("products.urls")),
+]
+```
+
+The `include()` function connects the project's URL configuration to the product application's URL configuration.
+
+Django combines the two path segments:
+
+- Project prefix: `api/`
+- Application path: `products/`
+
+The resulting endpoint is:
+
+`/api/products/`
+
+If you already have other URL patterns, such as a `hello_api` endpoint, keep them if you still need them.
+
+## 7. Testing the API
+
+### Command: Start the development server
+
+```bash
+python manage.py runserver
+```
+
+**Purpose:** Starts Django's local development server so we can test our application in a browser or API client.
+
+Open this URL:
+
+`http://127.0.0.1:8000/api/products/`
+
+You should see a JSON response containing your saved products.
+
+Each product should include fields such as:
+
+- `id`
+- `name`
+- `description`
+- `price`
+- `stock`
+- `created_at`
+- `updated_at`
+
+The exact values depend on the records in your database.
+
+## 8. Understanding the Complete Request Flow
+
+When someone visits `/api/products/`, the following happens:
+
+1. Django receives the HTTP request.
+2. Django's URL configuration matches the `/api/products/` path.
+3. The `product_list` view is called.
+4. `Product.objects.all()` retrieves the products from the database.
+5. `ProductSerializer` converts the product records into serialized data.
+6. `Response(serializer.data)` returns the data through DRF's response system.
+7. DRF renders the data as JSON for the client.
+
+This is the basic flow of a read-only list endpoint.
+
+## 9. Commands and Their Uses — Quick Reference
+
+| Command | Purpose |
+|---|---|
+| `python manage.py shell` | Opens the Django interactive shell. |
+| `from products.models import Product` | Imports the Product model. |
+| `Product.objects.create(...)` | Creates a product record. |
+| `Product.objects.all()` | Retrieves all products. |
+| `Product.objects.count()` | Counts product records. |
+| `exit()` | Exits the Django shell. |
+| `python manage.py runserver` | Starts the local development server. |
+
+## 10. Practical Exercise
+
+Before moving on, complete these tasks:
+
+1. Create one additional product using the Django shell.
+2. Run `Product.objects.count()` to confirm the number of records.
+3. Visit `/api/products/` in your browser.
+4. Confirm that the new product appears in the JSON response.
+5. Explain in your own words why we used `many=True` in the serializer.
+
+**Learning outcome:** You should now understand how to create test data, retrieve database records, serialize multiple model instances, connect a view to a URL, and return a JSON response through Django REST Framework.
+
+**Next topic: 13.11 — Retrieving a Single Product by ID**
+
+We will build `GET /api/products/1/`, learn how URL parameters work, retrieve one product using its ID, and handle cases where the requested product does not exist.

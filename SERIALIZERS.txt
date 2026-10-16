@@ -1,0 +1,168 @@
+# TOPIC 13 — SERIALIZERS
+
+## 13.1 What Is a Serializer?
+
+A serializer in Django REST Framework is a tool that converts complex data, such as Django model instances, into native Python data types that can be rendered into formats such as JSON.
+
+Serializers can also validate incoming data and convert valid input into Python data that can be used to create or update database records.
+
+### Why Do We Need Serializers?
+
+Django works with Python objects and model instances, while clients such as web browsers and frontend applications commonly exchange data using JSON.
+
+Serializers help bridge this gap.
+
+For example, our eCommerce database might contain a product with these details:
+
+- Name: Wireless Mouse
+- Description: Rechargeable wireless mouse
+- Price: 12500.00
+- Stock: 20
+
+A serializer can convert the Product model instance into data that DRF can return as JSON.
+
+### Serialization
+
+Serialization is the process of converting a complex object into a representation that can be easily transmitted or rendered.
+
+Example:
+
+Django Product Model → Serializer → Python Data → JSON Response
+
+### Deserialization
+
+Deserialization is the process of taking incoming data and converting it into native Python data that can be validated and used by the application.
+
+Example:
+
+Incoming JSON → Python Data → Serializer Validation → Validated Data → Database Record
+
+## 13.2 Serializers and Encryption
+
+Serializers do NOT encrypt or decrypt data.
+
+Their primary responsibilities are data conversion and validation.
+
+### HTTPS/TLS
+
+HTTPS protects data travelling between a client and server by encrypting the network connection.
+
+### Database Storage
+
+Data stored in a database is not automatically encrypted simply because Django REST Framework uses serializers.
+
+For example, SQLite does not encrypt its database file by default.
+
+### Important Differences
+
+- HTTPS/TLS protects data in transit.
+- Serializers convert data representations and validate input.
+- Databases store records.
+- Database or field encryption protects selected data at rest.
+- Password hashing protects stored passwords from being directly readable.
+
+These are separate responsibilities and should not be confused.
+
+## 13.3 Creating a Product Serializer
+
+### Step 1: Create the File
+
+Inside the products app, create:
+
+products/serializers.py
+
+### Step 2: Write the Code
+
+```python
+from rest_framework import serializers
+from .models import Product
+
+
+class ProductSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
+        fields = "__all__"
+```
+
+### Step 3: Understand the Code
+
+`from rest_framework import serializers`
+
+Imports Django REST Framework's serializer tools.
+
+`from .models import Product`
+
+Imports the Product model from the current app.
+
+`class ProductSerializer(serializers.ModelSerializer):`
+
+Creates a serializer based on the Product model.
+
+`class Meta:`
+
+Defines configuration for the serializer.
+
+`model = Product`
+
+Tells the serializer which Django model to use.
+
+`fields = "__all__"`
+
+Includes all fields defined on the model, including automatically generated fields such as the primary key.
+
+### Why Use ModelSerializer?
+
+ModelSerializer automatically generates serializer fields from an existing Django model.
+
+It also provides default behavior for creating and updating model instances.
+
+This reduces the amount of code we need to write.
+
+## 13.4 Testing the Serializer
+
+Open the Django shell:
+
+```bash
+python manage.py shell
+```
+
+Enter:
+
+```python
+from products.models import Product
+from products.serializers import ProductSerializer
+
+serializer = ProductSerializer()
+
+print(serializer)
+```
+
+This displays the serializer's generated fields.
+
+To exit the shell:
+
+```python
+exit()
+```
+
+### Important Commands
+
+`python manage.py shell`
+
+Opens an interactive Python environment with Django configured.
+
+`python manage.py check`
+
+Checks the project for common configuration problems.
+
+`python manage.py showmigrations`
+
+Displays available migrations and whether they have been applied.
+
+Creating a serializer does not require a database migration because it does not change the database model.
+
+## Summary
+
+A serializer converts data between representations and validates incoming data. HTTPS encrypts data travelling across the network, while database encryption is a separate mechanism for protecting stored information.
+
+In our eCommerce project, ProductSerializer will help us return product information as JSON and validate product data received from clients before saving it.

@@ -1,0 +1,49 @@
+### Database Migrations in Django
+
+**1. What is a migration?**
+
+A migration is a record of changes to a Django model's database structure. Django uses migrations to create, modify, or remove database tables and fields.
+
+**2. Important migration commands**
+
+**Command 1:**
+
+```bash
+python manage.py showmigrations
+```
+
+Purpose: Displays the migrations available for each app and indicates whether each migration has been applied.
+
+- `[X]` means the migration has been applied.
+- `[ ]` means the migration has not been applied.
+- `(no migrations)` means the app has no migration files yet.
+
+**Command 2:**
+
+```bash
+python manage.py makemigrations
+```
+
+Purpose: Detects changes to Django models and generates migration files describing those changes.
+
+**Command 3:**
+
+```bash
+python manage.py migrate
+```
+
+Purpose: Applies pending migrations to the database, creating or updating database structures as required.
+
+**3. Difference between `makemigrations` and `migrate`**
+
+- `makemigrations` generates migration files from model changes.
+- `migrate` applies those migration files to the database.
+
+**Example workflow:**
+
+1. Create or modify a model in `products/models.py`.
+2. Run `python manage.py makemigrations`.
+3. Run `python manage.py migrate`.
+4. Run `python manage.py showmigrations` to verify the migration status.
+
+**Important:** Creating a model class alone does not create its database table. You normally need to generate and apply its migration first.
