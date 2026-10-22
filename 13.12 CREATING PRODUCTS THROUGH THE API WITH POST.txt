@@ -1,0 +1,239 @@
+# TOPIC 13.12: CREATING PRODUCTS THROUGH THE API WITH POST
+
+## 1. Introduction
+
+The `POST` HTTP method is used to send data to a server to create a new resource.
+
+In our eCommerce API, we use `POST` to add new products to the database.
+
+## 2. Updating `products/views.py`
+
+We will update our existing `products_list` view to handle both `GET` and `POST` requests.
+
+```python
+from rest_framework.response import Response
+from rest_framework.decorators import api_view
+from django.shortcuts import get_object_or_404
+from rest_framework import status
+
+from .models import Product
+from .serializers import ProductSerializer
+
+
+@api_view(['GET', 'POST'])
+def products_list(request):
+    if request.method == 'GET':
+        products = Product.objects.all()
+        serializer = ProductSerializer(products, many=True)
+        return Response(serializer.data)
+
+    elif request.method == 'POST':
+        serializer = ProductSerializer(data=request.data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                serializer.data,
+                status=status.HTTP_201_CREATED
+            )
+
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+
+@api_view(['GET'])
+def product_detail(request, pk):
+    product = get_object_or_404(Product, pk=pk)
+    serializer = ProductSerializer(product)
+    return Response(serializer.data)
+```
+
+**Important:** We kept the existing `products_list` function and added `POST` support. The `product_detail` view remains unchanged.
+
+## 3. Understanding the Code
+
+### A. Allowing GET and POST
+
+```python
+@api_view(['GET', 'POST'])
+```
+
+Allows the view to accept both `GET` and `POST` requests.
+
+- `GET`: Retrieves the list of products.
+- `POST`: Creates a new product.
+
+### B. Checking the Request Method
+
+```python
+if request.method == 'GET':
+```
+
+Checks whether the client wants to retrieve the product list.
+
+```python
+elif request.method == 'POST':
+```
+
+Checks whether the client is submitting data to create a product.
+
+### C. Receiving New Product Data
+
+```python
+serializer = ProductSerializer(data=request.data)
+```
+
+- `request.data` contains the data submitted by the client.
+- `ProductSerializer` prepares that data for validation and conversion into a Django model instance.
+
+**Difference between the two serializer statements:**
+
+```python
+ProductSerializer(products, many=True)
+```
+
+Serializes existing products retrieved from the database.
+
+```python
+ProductSerializer(data=request.data)
+```
+
+Accepts incoming data that may be used to create a new product.
+
+### D. Validating the Data
+
+```python
+if serializer.is_valid():
+```
+
+Checks whether the submitted data satisfies the serializer's validation rules.
+
+If validation succeeds, the code inside the `if` block runs. Otherwise, the code returns the validation errors.
+
+### E. Saving the Product
+
+```python
+serializer.save()
+```
+
+**This is the point where the new product is created and saved to the database**, provided validation succeeded.
+
+Because we initialized the `ModelSerializer` with incoming data and did not supply an existing model instance, its default creation behavior is used.
+
+### F. Returning a Successful Response
+
+```python
+return Response(
+    serializer.data,
+    status=status.HTTP_201_CREATED
+)
+```
+
+- `serializer.data` contains the serialized representation of the newly created product.
+- `status.HTTP_201_CREATED` returns HTTP status code **201**, meaning the resource was created successfully.
+
+**Important distinction:** `serializer.save()` saves the product. `return Response(...)` sends confirmation and the product data back to the client.
+
+Even if the response line were removed, the product could still be saved after `serializer.save()` executes. However, the client would not receive this intended response.
+
+### G. Returning Validation Errors
+
+```python
+return Response(
+    serializer.errors,
+    status=status.HTTP_400_BAD_REQUEST
+)
+```
+
+If the submitted data is invalid:
+
+- `serializer.errors` explains what went wrong.
+- `status.HTTP_400_BAD_REQUEST` returns HTTP status code **400**, indicating that the request contains invalid data.
+
+## 4. Example POST Request
+
+**Endpoint:**
+
+```text
+http://127.0.0.1:8000/api/products/
+```
+
+**Request body (JSON):**
+
+```json
+{
+    "name": "Bluetooth Speaker",
+    "description": "Portable wireless speaker",
+    "price": "18500.00",
+    "stock": 15
+}
+```
+
+We omit fields such as `id`, `created_at`, and `updated_at` because Django manages them automatically in our current model.
+
+## 5. Testing the Endpoint
+
+1. Activate the project's virtual environment.
+2. Start the development server:
+
+```bash
+python manage.py runserver
+```
+
+3. Open this URL in your browser:
+
+```text
+http://127.0.0.1:8000/api/products/
+```
+
+4. Use the Django REST Framework browsable API's POST form, if available, to submit the product data.
+5. Check the response and then retrieve the product list again.
+
+**Expected results:**
+
+- Valid data: HTTP `201 Created`, with the new product's data.
+- Invalid data: HTTP `400 Bad Request`, with validation errors.
+- A successful creation should also make the new product appear in subsequent GET requests.
+
+## 6. Important Concepts to Remember
+
+| Code | Purpose |
+|---|---|
+| `request.data` | Retrieves submitted request data |
+| `serializer.is_valid()` | Validates the submitted data |
+| `serializer.save()` | Creates and saves the new product |
+| `serializer.data` | Provides the serialized product representation |
+| `status.HTTP_201_CREATED` | Indicates successful resource creation |
+| `serializer.errors` | Provides validation error details |
+| `status.HTTP_400_BAD_REQUEST` | Indicates invalid request data |
+
+## 7. Practice Questions
+
+1. What is the purpose of the `POST` method?
+2. Why did we change the decorator from `@api_view(['GET'])` to `@api_view(['GET', 'POST'])`?
+3. What is the difference between `ProductSerializer(products, many=True)` and `ProductSerializer(data=request.data)`?
+4. Why must we validate the serializer before saving?
+5. Which line actually saves the new product to the database?
+6. What is the difference between HTTP `201` and HTTP `400`?
+7. If `return Response(...)` is removed but `serializer.save()` remains, can the product still be saved? Explain.
+8. What might happen if we call `serializer.save()` without first checking `serializer.is_valid()`?
+
+## 8. Practical Task
+
+Create a new product through the API with these details:
+
+- **Name:** Wireless Mouse
+- **Description:** A wireless mouse for everyday computer use
+- **Price:** `7500.00`
+- **Stock:** `20`
+
+Then:
+
+1. Confirm that the API returns `201 Created`.
+2. Send a `GET` request to the product list endpoint.
+3. Confirm that the new product appears in the list.
+4. Try submitting invalid data and inspect the validation errors.
+
+**End of Topic 13.12**
