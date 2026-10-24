@@ -1,0 +1,186 @@
+# TOPIC 13.14: DELETING PRODUCTS THROUGH THE API WITH DELETE
+
+## 1. Introduction
+
+The `DELETE` HTTP method is used to remove an existing resource.
+
+In our eCommerce API, we use DELETE to remove a product from the database.
+
+For example, if a product is discontinued, an administrator may want to delete it.
+
+## 2. Updating `products/views.py`
+
+We added DELETE support to our existing `product_detail` view.
+
+```python
+@api_view(['GET', 'PUT', 'PATCH', 'DELETE'])
+def product_detail(request, pk):
+    product = get_object_or_404(Product, pk=pk)
+
+    if request.method == 'GET':
+        serializer = ProductSerializer(product)
+        return Response(serializer.data)
+
+    elif request.method == 'PUT':
+        serializer = ProductSerializer(
+            product,
+            data=request.data
+        )
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    elif request.method == 'PATCH':
+        serializer = ProductSerializer(
+            product,
+            data=request.data,
+            partial=True
+        )
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    elif request.method == 'DELETE':
+        product.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+```
+
+**Important:** This code replaces the existing `product_detail` function. Keep your imports and `products_list` function unchanged.
+
+## 3. Understanding the DELETE Logic
+
+### A. Allowing DELETE Requests
+
+```python
+@api_view(['GET', 'PUT', 'PATCH', 'DELETE'])
+```
+
+This allows the view to handle four HTTP methods:
+
+- GET retrieves a product.
+- PUT performs a full update.
+- PATCH performs a partial update.
+- DELETE removes a product.
+
+### B. Retrieving the Product
+
+```python
+product = get_object_or_404(Product, pk=pk)
+```
+
+This retrieves the product whose primary key matches the value provided in the URL.
+
+If the product does not exist, Django returns HTTP `404 Not Found`.
+
+This prevents the code from proceeding to the deletion step when the requested product cannot be found.
+
+### C. Deleting the Product
+
+```python
+product.delete()
+```
+
+This deletes the retrieved product record from the database under normal Django model behavior.
+
+The deletion occurs when this line executes successfully, not when the response is returned.
+
+### D. Returning a Successful Response
+
+```python
+return Response(status=status.HTTP_204_NO_CONTENT)
+```
+
+This returns HTTP status code `204 No Content`.
+
+It means the request succeeded, but the response does not contain a body.
+
+## 4. Understanding the HTTP Status Codes
+
+| Status Code | Meaning | Example |
+|---|---|---|
+| `204 No Content` | Request succeeded without a response body | Product deleted successfully |
+| `404 Not Found` | Requested resource does not exist | Product ID does not exist |
+| `500 Internal Server Error` | An unexpected server-side error occurred | An unhandled database error |
+
+## 5. Testing the DELETE Endpoint
+
+### Step 1: Activate the virtual environment
+
+From the project root in Windows Command Prompt:
+
+```bash
+venv\Scripts\activate
+```
+
+### Step 2: Start the development server
+
+```bash
+python manage.py runserver
+```
+
+### Step 3: Open a product detail endpoint
+
+```text
+http://127.0.0.1:8000/api/products/1/
+```
+
+Replace `1` with the ID of a product you can safely delete.
+
+### Step 4: Send the DELETE request
+
+Use the DELETE option in the Django REST Framework browsable API, if available, or use an API client such as Postman.
+
+### Step 5: Verify the deletion
+
+After receiving `204 No Content`, request the same product URL again.
+
+Expected result:
+
+```text
+404 Not Found
+```
+
+You can also retrieve the product list and confirm that the deleted product no longer appears.
+
+**Testing note:** These steps were successfully completed in our project.
+
+## 6. Important Concepts to Remember
+
+- `get_object_or_404()` retrieves the product or returns a 404 response.
+- `product.delete()` performs the deletion.
+- `HTTP_204_NO_CONTENT` confirms success without returning a response body.
+- A subsequent GET request for the deleted product returns 404.
+- Deletion can affect related records depending on the foreign-key relationships and their configured deletion behavior. In a production eCommerce system, consider whether products should be archived or soft-deleted instead of permanently removed.
+
+## 7. Practice Questions
+
+1. What is the purpose of the DELETE HTTP method?
+2. Why do we retrieve the product before deleting it?
+3. Which line actually deletes the product from the database?
+4. Why do we return `204 No Content` instead of `200 OK` with the product data?
+5. What happens when we try to retrieve a product after it has been deleted?
+6. What is the difference between `204 No Content` and `404 Not Found`?
+7. Why might permanently deleting a product be risky in a real eCommerce application?
+
+## 8. Practical Task
+
+1. Create a test product using the POST endpoint.
+2. Retrieve the new product and note its ID.
+3. Delete it using the DELETE endpoint.
+4. Confirm that the API returns `204 No Content`.
+5. Retrieve the same product again and confirm that the API returns `404 Not Found`.
+6. Retrieve the product list and confirm that the deleted product is no longer present.
+
+**End of Topic 13.14**

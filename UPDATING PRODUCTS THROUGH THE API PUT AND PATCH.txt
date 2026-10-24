@@ -1,0 +1,323 @@
+# TOPIC 13.13: UPDATING PRODUCTS THROUGH THE API WITH PUT AND PATCH
+
+## 1. Introduction
+
+In an eCommerce API, users may need to update existing products without creating new ones.
+
+For example, a product's price may change, or its stock quantity may increase after a new delivery.
+
+We use two HTTP methods for updates:
+
+- **PUT:** Used for a full update. The client generally needs to provide all required fields.
+- **PATCH:** Used for a partial update. The client provides only the fields it wants to change.
+
+Unlike POST, which creates a new product, PUT and PATCH modify an existing product.
+
+## 2. Difference Between POST, PUT, and PATCH
+
+| HTTP Method | Purpose | Example |
+|---|---|---|
+| POST | Create a new product | Add a wireless mouse |
+| PUT | Fully update an existing product | Submit all required product fields with updated values |
+| PATCH | Partially update an existing product | Change only its stock quantity |
+
+## 3. Updating `products/views.py`
+
+We will modify the existing `product_detail` view to handle GET, PUT, and PATCH requests.
+
+Keep the existing imports and `products_list` function. Replace only the current `product_detail` function with this code:
+
+```python
+@api_view(['GET', 'PUT', 'PATCH'])
+def product_detail(request, pk):
+    product = get_object_or_404(Product, pk=pk)
+
+    if request.method == 'GET':
+        serializer = ProductSerializer(product)
+        return Response(serializer.data)
+
+    elif request.method == 'PUT':
+        serializer = ProductSerializer(
+            product,
+            data=request.data
+        )
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    elif request.method == 'PATCH':
+        serializer = ProductSerializer(
+            product,
+            data=request.data,
+            partial=True
+        )
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
+```
+
+## 4. Understanding the Code
+
+### A. Allowing Multiple HTTP Methods
+
+```python
+@api_view(['GET', 'PUT', 'PATCH'])
+```
+
+This decorator allows the view to handle three types of requests:
+
+- GET retrieves an existing product.
+- PUT performs a full update.
+- PATCH performs a partial update.
+
+### B. Retrieving the Existing Product
+
+```python
+product = get_object_or_404(Product, pk=pk)
+```
+
+This retrieves the product whose primary key matches the `pk` value in the URL.
+
+If the product does not exist, Django returns an HTTP 404 Not Found response.
+
+We retrieve the existing product because we want to modify it rather than create another one.
+
+### C. Handling GET
+
+```python
+if request.method == 'GET':
+    serializer = ProductSerializer(product)
+    return Response(serializer.data)
+```
+
+This preserves the functionality of our existing detail endpoint.
+
+The serializer converts the existing product into a representation that can be returned to the client.
+
+### D. Handling PUT
+
+```python
+serializer = ProductSerializer(
+    product,
+    data=request.data
+)
+```
+
+This initializes the serializer with two important arguments:
+
+- `product`: The existing database object that we want to update.
+- `data=request.data`: The new values submitted by the client.
+
+Because we supplied an existing object, the serializer knows which product to update.
+
+Next, we validate and save:
+
+```python
+if serializer.is_valid():
+    serializer.save()
+    return Response(serializer.data)
+```
+
+- `serializer.is_valid()` checks whether the submitted data meets the validation rules.
+- `serializer.save()` updates the existing product after successful validation.
+- `Response(serializer.data)` returns the updated product.
+
+For a full update, all required fields should generally be supplied. Optional fields and fields with defaults may behave differently depending on the serializer and model configuration.
+
+### E. Handling PATCH
+
+```python
+serializer = ProductSerializer(
+    product,
+    data=request.data,
+    partial=True
+)
+```
+
+This works similarly to PUT, but includes:
+
+```python
+partial=True
+```
+
+This tells the serializer to allow a partial update without requiring every normally required field.
+
+For example, if we want to change only a product's stock quantity, we can submit just the stock field.
+
+```python
+if serializer.is_valid():
+    serializer.save()
+    return Response(serializer.data)
+```
+
+After validation, `serializer.save()` updates the existing product, and the response contains its updated representation.
+
+### F. Handling Invalid Data
+
+Both PUT and PATCH use:
+
+```python
+return Response(
+    serializer.errors,
+    status=status.HTTP_400_BAD_REQUEST
+)
+```
+
+If validation fails, the API returns the validation errors with HTTP status code `400 Bad Request`.
+
+The database update does not occur through this code path because `serializer.save()` is not called.
+
+## 5. Why Does the Serializer Receive `product`?
+
+Compare the serializer statements used for creation and updating.
+
+**Creating a product:**
+
+```python
+serializer = ProductSerializer(data=request.data)
+```
+
+No existing object is supplied. After successful validation, `serializer.save()` creates a new product.
+
+**Updating a product:**
+
+```python
+serializer = ProductSerializer(
+    product,
+    data=request.data
+)
+```
+
+An existing object is supplied. After successful validation, `serializer.save()` updates that object.
+
+The first argument identifies the existing model instance to update. Without it, the serializer would treat the validated data as a new object to create when saved.
+
+## 6. Testing PATCH
+
+Suppose product ID `1` currently has:
+
+```json
+{
+    "id": 1,
+    "name": "Samsung S24 Ultra",
+    "description": "Samsung's flagship smartphone",
+    "price": "12500.00",
+    "stock": 10
+}
+```
+
+We want to change only its stock quantity to `15`.
+
+**Endpoint:**
+
+```text
+http://127.0.0.1:8000/api/products/1/
+```
+
+**HTTP method:** PATCH
+
+**Request body:**
+
+```json
+{
+    "stock": 15
+}
+```
+
+**Expected result:**
+
+- The stock changes from `10` to `15`.
+- The name, description, and price remain unchanged.
+- The API returns the updated product.
+
+The example assumes product ID `1` exists in your database. Use an actual product ID if yours is different.
+
+## 7. Testing PUT
+
+Send a PUT request to the same endpoint with all required product fields.
+
+Example request body:
+
+```json
+{
+    "name": "Samsung S24 Ultra",
+    "description": "Updated flagship smartphone",
+    "price": "15000.00",
+    "stock": 15
+}
+```
+
+Because PUT is a full update, include all required fields. If required fields are missing, validation will normally fail.
+
+## 8. Testing Through the Browsable API
+
+1. Activate your virtual environment:
+
+```bash
+venv\Scripts\activate
+```
+
+2. Start the Django development server:
+
+```bash
+python manage.py runserver
+```
+
+3. Open the detail endpoint in your browser, replacing `1` with an existing product ID:
+
+```text
+http://127.0.0.1:8000/api/products/1/
+```
+
+4. Use the browsable API's available PUT or PATCH form to submit your update.
+5. Retrieve the product again to confirm the change.
+
+If the browser interface does not provide the necessary request method or form, use an API client such as Postman.
+
+## 9. Important Concepts to Remember
+
+| Concept | Meaning |
+|---|---|
+| `product` | The existing database object being updated |
+| `request.data` | The submitted update data |
+| `partial=True` | Allows a partial update |
+| `serializer.is_valid()` | Validates the submitted values |
+| `serializer.save()` | Updates the existing object after validation |
+| HTTP 400 | Indicates invalid request data |
+| HTTP 404 | Indicates that the requested product does not exist |
+
+## 10. Practice Questions
+
+1. What is the difference between POST and PATCH?
+2. What is the difference between PUT and PATCH?
+3. Why do we retrieve the existing product before updating it?
+4. Why do we pass `product` as the first argument to `ProductSerializer` when updating?
+5. What does `partial=True` do?
+6. Which line actually saves the changes to the database?
+7. What happens if the product ID in the URL does not exist?
+8. Why should we validate the serializer before calling `serializer.save()`?
+
+## 11. Practical Task
+
+Use your existing eCommerce API to complete these exercises:
+
+1. Find an existing product and note its current price and stock.
+2. Use PATCH to change only its stock to `25`.
+3. Confirm that its other fields remain unchanged.
+4. Use PUT to update the product's required fields, including its price.
+5. Try submitting invalid data and inspect the validation errors.
+6. Retrieve the product again to confirm its final values.
+
+**End of Topic 13.13**
