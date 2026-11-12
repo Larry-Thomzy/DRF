@@ -1,0 +1,358 @@
+TOPIC 13.19: PAGINATION WITH DJANGO REST FRAMEWORK (DRF)
+‎
+‎1. What is Pagination?
+‎
+‎Pagination is the process of dividing a large collection of data into smaller, manageable sections called pages.
+‎
+‎Imagine an e-commerce application with 1,000 products.
+‎
+‎Without pagination, a request to:
+‎
+‎"GET /api/products/"
+‎
+‎could return all 1,000 products in one response.
+‎
+‎This can:
+‎
+‎- Increase response size.
+‎- Consume more memory and bandwidth.
+‎- Make the API slower.
+‎- Make it harder for clients to display and navigate the data.
+‎
+‎With pagination, we can return only a limited number of products per request.
+‎
+‎For example:
+‎
+‎- Page 1: Products 1–5
+‎- Page 2: Products 6–10
+‎- Page 3: Products 11–15
+‎
+‎Instead of returning everything at once, the API returns a smaller portion.
+‎
+‎2. Understanding Page Number Pagination
+‎
+‎DRF provides a pagination class called "PageNumberPagination".
+‎
+‎It allows clients to request a particular page using a query parameter.
+‎
+‎Examples:
+‎
+‎"/api/products/?page=1"
+‎
+‎"/api/products/?page=2"
+‎
+‎"/api/products/?page=3"
+‎
+‎The "page" parameter tells the API which page of results the client wants.
+‎
+‎Important: Pagination does not create a new URL route. We are still using our existing "/api/products/" endpoint.
+‎
+‎3. Creating a Custom Pagination Class
+‎
+‎Let's create a new file inside our "products" app:
+‎
+‎"products/pagination.py"
+‎
+‎Inside that file, write:
+‎
+‎from rest_framework.pagination import PageNumberPagination
+‎
+‎
+‎class ProductPagination(PageNumberPagination):
+‎    page_size = 5
+‎    page_size_query_param = 'page_size'
+‎    max_page_size = 20
+‎
+‎Let's understand each property.
+‎
+‎A. page_size
+‎
+‎page_size = 5
+‎
+‎This specifies the default number of products returned per page.
+‎
+‎If the client does not specify a page size, the API returns 5 products per page.
+‎
+‎B. page_size_query_param
+‎
+‎page_size_query_param = 'page_size'
+‎
+‎This allows the client to request a different number of products per page.
+‎
+‎For example:
+‎
+‎"/api/products/?page_size=3"
+‎
+‎The API will return 3 products per page instead of the default 5.
+‎
+‎C. max_page_size
+‎
+‎max_page_size = 20
+‎
+‎This establishes the maximum number of products the client can request per page.
+‎
+‎For example:
+‎
+‎"/api/products/?page_size=100"
+‎
+‎The API will not return 100 products per page. It will enforce the maximum of 20.
+‎
+‎This prevents clients from requesting excessively large pages.
+‎
+‎4. Connecting Pagination to Our Existing View
+‎
+‎Remember our existing "products_list" function in:
+‎
+‎"products/views.py"
+‎
+‎We previously used:
+‎
+‎products = Product.objects.all()
+‎
+‎serializer = ProductSerializer(
+‎    products,
+‎    many=True
+‎)
+‎
+‎return Response(serializer.data)
+‎
+‎This returns every product.
+‎
+‎We now need to paginate the queryset before serializing it.
+‎
+‎Step 1: Import our pagination class
+‎
+‎At the top of "products/views.py", add:
+‎
+‎from .pagination import ProductPagination
+‎
+‎Step 2: Update the GET section
+‎
+‎Replace the existing GET section with:
+‎
+‎if request.method == 'GET':
+‎
+‎    products = Product.objects.all()
+‎
+‎    paginator = ProductPagination()
+‎
+‎    page = paginator.paginate_queryset(
+‎        products,
+‎        request
+‎    )
+‎
+‎    serializer = ProductSerializer(
+‎        page,
+‎        many=True
+‎    )
+‎
+‎    return paginator.get_paginated_response(
+‎        serializer.data
+‎    )
+‎
+‎5. Understanding the Pagination Code
+‎
+‎Let's break down what happens.
+‎
+‎A. Retrieve all products
+‎
+‎products = Product.objects.all()
+‎
+‎This creates a QuerySet containing all products.
+‎
+‎B. Create a pagination instance
+‎
+‎paginator = ProductPagination()
+‎
+‎We create an instance of our custom pagination class.
+‎
+‎C. Divide the QuerySet into pages
+‎
+‎page = paginator.paginate_queryset(
+‎    products,
+‎    request
+‎)
+‎
+‎This is where pagination happens.
+‎
+‎The method receives:
+‎
+‎- "products": The QuerySet we want to paginate.
+‎- "request": The incoming HTTP request, which contains query parameters such as "page" and "page_size".
+‎
+‎It returns only the products belonging to the requested page.
+‎
+‎D. Serialize the current page
+‎
+‎serializer = ProductSerializer(
+‎    page,
+‎    many=True
+‎)
+‎
+‎We serialize only the products returned by the paginator.
+‎
+‎We still use "many=True" because the page contains multiple products.
+‎
+‎E. Return the paginated response
+‎
+‎return paginator.get_paginated_response(
+‎    serializer.data
+‎)
+‎
+‎Instead of returning only the serialized products, DRF generates a structured response containing pagination information and the results.
+‎
+‎6. Understanding the Paginated JSON Response
+‎
+‎Suppose we have 10 products and our default page size is 5.
+‎
+‎Request:
+‎
+‎"GET /api/products/?page=1"
+‎
+‎The response will look similar to:
+‎
+‎{
+‎    "count": 10,
+‎    "next": "http://127.0.0.1:8000/api/products/?page=2",
+‎    "previous": null,
+‎    "results": [
+‎        {
+‎            "id": 1,
+‎            "name": "Samsung Galaxy A55",
+‎            "description": "Samsung smartphone",
+‎            "price": "450000.00",
+‎            "stock": 15
+‎        }
+‎    ]
+‎}
+‎
+‎The example above shows one product for illustration. Your actual "results" array will contain up to 5 products.
+‎
+‎Let's understand the response fields.
+‎
+‎Field| Meaning
+‎count| Total number of matching products
+‎next| URL for the next page
+‎previous| URL for the previous page
+‎results| Products returned on the current page
+‎
+‎Notice that "count" represents the total number of matching products, not just the number on the current page.
+‎
+‎7. Testing Pagination
+‎
+‎Start your Django server:
+‎
+‎python manage.py runserver
+‎
+‎Open the following URLs in your browser.
+‎
+‎Test 1: Default pagination
+‎
+‎"http://127.0.0.1:8000/api/products/"
+‎
+‎Expected: Up to 5 products.
+‎
+‎Test 2: Second page
+‎
+‎"http://127.0.0.1:8000/api/products/?page=2"
+‎
+‎Expected: The next 5 products.
+‎
+‎Test 3: Request 3 products per page
+‎
+‎"http://127.0.0.1:8000/api/products/?page_size=3"
+‎
+‎Expected: Up to 3 products.
+‎
+‎Test 4: Combine page and page size
+‎
+‎"http://127.0.0.1:8000/api/products/?page=2&page_size=3"
+‎
+‎Expected: The second page, containing up to 3 products.
+‎
+‎Test 5: Exceed the maximum page size
+‎
+‎"http://127.0.0.1:8000/api/products/?page_size=100"
+‎
+‎Expected: The API enforces the maximum page size of 20.
+‎
+‎8. Important: Pagination and Filtering
+‎
+‎Pagination can work alongside filtering and searching.
+‎
+‎For example:
+‎
+‎"/api/products/?search=samsung&page=1"
+‎
+‎Or:
+‎
+‎"/api/products/?min_price=100000&in_stock=true&page=2"
+‎
+‎The correct sequence is:
+‎
+‎1. Retrieve the products.
+‎2. Apply filtering conditions.
+‎3. Apply search conditions.
+‎4. Paginate the resulting QuerySet.
+‎5. Serialize the current page.
+‎6. Return the response.
+‎
+‎This means pagination operates on the filtered and searched results, not necessarily the entire product collection.
+‎
+‎9. Global Pagination Configuration
+‎
+‎DRF also supports global pagination settings through "settings.py".
+‎
+‎For example:
+‎
+‎REST_FRAMEWORK = {
+‎    'DEFAULT_PAGINATION_CLASS':
+‎        'rest_framework.pagination.PageNumberPagination',
+‎
+‎    'PAGE_SIZE': 5,
+‎}
+‎
+‎This configures pagination globally for compatible DRF generic views and viewsets.
+‎
+‎Important: Our current "products_list" endpoint uses a function-based view with "@api_view". Global pagination settings do not automatically paginate this function-based view. That is why we explicitly created "ProductPagination()" and called "paginate_queryset()" in our view.
+‎
+‎10. Practical Assignment
+‎
+‎Using our existing e-commerce backend:
+‎
+‎1. Create "products/pagination.py".
+‎2. Create the "ProductPagination" class.
+‎3. Set the default page size to 5.
+‎4. Allow clients to change the page size using "page_size".
+‎5. Set the maximum page size to 20.
+‎6. Connect pagination to the GET section of "products_list".
+‎7. Test pages 1, 2 and 3.
+‎8. Test a custom page size of 3.
+‎9. Test a requested page size of 100.
+‎10. Confirm that the POST functionality still works.
+‎
+‎11. Revision Questions
+‎
+‎1. What is pagination, and why is it useful in an API?
+‎2. What does "page_size = 5" mean?
+‎3. What is the purpose of "page_size_query_param"?
+‎4. Why do we need "max_page_size"?
+‎5. What does "paginate_queryset()" return?
+‎6. Why do we serialize the "page" variable instead of the original "products" QuerySet?
+‎7. What is the difference between "count" and the number of products in "results"?
+‎8. Can pagination work together with searching and filtering?
+‎
+‎12. Next Topic
+‎
+‎Topic 13.20: Product Ordering and Sorting with Django REST Framework
+‎
+‎We will learn how clients can request products in a particular order, such as:
+‎
+‎- Cheapest to most expensive.
+‎- Most expensive to cheapest.
+‎- Newest products first.
+‎- Oldest products first.
+‎
+‎Our goal is to keep improving the same product API rather than creating unnecessary endpoints.
+‎
+

@@ -1,0 +1,171 @@
+TOPIC 13.18: PRODUCT SEARCHING WITH DJANGO REST FRAMEWORK
+‎
+‎1. What Is Product Searching?
+‎
+‎Product searching allows users to find products by entering keywords.
+‎
+‎For example, an eCommerce customer might search for:
+‎
+‎- Samsung
+‎- iPhone
+‎- Laptop
+‎- Wireless headphones
+‎
+‎Unlike filtering, which uses specific conditions such as price or stock availability, searching primarily uses text or keywords.
+‎
+‎2. Searching vs Filtering
+‎
+‎Filtering| Searching
+‎Narrows results using conditions| Finds results using keywords
+‎Uses parameters like "min_price"| Uses parameters like "search"
+‎Can filter by price or stock| Can search names or descriptions
+‎Uses ORM lookups such as "gte"| Commonly uses "icontains"
+‎
+‎Examples:
+‎
+‎Filtering:
+‎
+‎/api/products/?min_price=20000
+‎
+‎Searching:
+‎
+‎/api/products/?search=samsung
+‎
+‎Combining both:
+‎
+‎/api/products/?search=samsung&min_price=20000
+‎
+‎3. Understanding the "icontains" Lookup
+‎
+‎Django ORM provides "icontains" for case-insensitive partial matching.
+‎
+‎Example:
+‎
+‎Product.objects.filter(name__icontains='samsung')
+‎
+‎This can match:
+‎
+‎- Samsung Galaxy A15
+‎- SAMSUNG Galaxy S24
+‎- samsung earbuds
+‎
+‎We can also search product descriptions:
+‎
+‎Product.objects.filter(description__icontains='samsung')
+‎
+‎4. Searching Multiple Fields
+‎
+‎A customer should ideally be able to search for a keyword in both the product name and description.
+‎
+‎For example, searching for "gaming" should find:
+‎
+‎- Products with "gaming" in their names.
+‎- Products whose descriptions mention gaming.
+‎
+‎Django ORM provides the "Q" object to combine database conditions using OR ("|").
+‎
+‎Example:
+‎
+‎from django.db.models import Q
+‎
+‎products = Product.objects.filter(
+‎    Q(name__icontains='gaming') |
+‎    Q(description__icontains='gaming')
+‎)
+‎
+‎The "|" operator means OR.
+‎
+‎Therefore, a product can match either condition to appear in the results.
+‎
+‎5. Understanding Query Parameters
+‎
+‎We will use a query parameter called "search".
+‎
+‎Example URL:
+‎
+‎/api/products/?search=samsung
+‎
+‎In our DRF view:
+‎
+‎search = request.query_params.get('search')
+‎
+‎Remember:
+‎
+‎- "search" is our chosen API parameter name.
+‎- "request.query_params" is provided by DRF.
+‎- ".get()" retrieves the supplied value.
+‎- The returned value is initially a string.
+‎
+‎6. Implementation Plan
+‎
+‎We will modify our existing "products_list" view.
+‎
+‎We do not need a new URL route.
+‎
+‎Our existing endpoint remains:
+‎
+‎path('products/', products_list, name='products-list')
+‎
+‎We will implement:
+‎
+‎1. Retrieve the search keyword.
+‎2. Check whether a search keyword was supplied.
+‎3. Search the product name.
+‎4. Search the product description.
+‎5. Combine both conditions using "Q" and OR.
+‎6. Serialize the matching products.
+‎7. Return the API response.
+‎
+‎7. Expected URLs
+‎
+‎URL| Expected behaviour
+‎"/api/products/"| Retrieve all products
+‎"/api/products/?search=samsung"| Search for Samsung
+‎"/api/products/?search=laptop"| Search for laptop
+‎"/api/products/?search=gaming"| Search names and descriptions for gaming
+‎"/api/products/?search=iphone"| Search for iPhone
+‎
+‎8. Combining Searching and Filtering
+‎
+‎Searching and filtering can work together.
+‎
+‎Example:
+‎
+‎/api/products/?search=samsung&min_price=20000&in_stock=true
+‎
+‎This means:
+‎
+‎- The product name or description must contain "samsung".
+‎- The price must be at least ₦20,000.
+‎- The product must have available stock.
+‎
+‎All these conditions must be satisfied, except that the name and description search conditions are combined using OR.
+‎
+‎9. Practical Assignments
+‎
+‎1. Retrieve products whose names contain "phone", case-insensitively.
+‎2. Retrieve products whose descriptions contain "wireless".
+‎3. Explain the difference between "contains" and "icontains".
+‎4. Explain what the Django "Q" object does.
+‎5. Implement a search parameter in the existing GET endpoint.
+‎6. Search both product names and descriptions.
+‎7. Combine search with minimum-price filtering.
+‎8. Test the API using different search keywords.
+‎
+‎10. Completion Checklist
+‎
+‎- [ ] Understand searching versus filtering.
+‎- [ ] Understand "icontains".
+‎- [ ] Understand "request.query_params.get()".
+‎- [ ] Understand Django's "Q" object.
+‎- [ ] Implement keyword searching.
+‎- [ ] Search multiple fields.
+‎- [ ] Combine search with filtering.
+‎- [ ] Test the API responses.
+‎
+‎11. Next Topic
+‎
+‎Product Pagination with Django REST Framework
+‎
+‎We will learn how to divide large product lists into smaller pages instead of returning hundreds or thousands of products in one response.
+‎
