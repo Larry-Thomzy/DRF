@@ -160,7 +160,7 @@ TOPIC 13.19: PAGINATION WITH DJANGO REST FRAMEWORK (DRF)
 ‎
 ‎This creates a QuerySet containing all products.
 ‎
-‎B. Create a pagination instance
+‎B. Create a pagination instance/object of ProductPagination() class
 ‎
 ‎paginator = ProductPagination()
 ‎
@@ -172,6 +172,7 @@ TOPIC 13.19: PAGINATION WITH DJANGO REST FRAMEWORK (DRF)
 ‎    products,
 ‎    request
 ‎)
+
 ‎
 ‎This is where pagination happens.
 ‎
@@ -355,4 +356,6 @@ TOPIC 13.19: PAGINATION WITH DJANGO REST FRAMEWORK (DRF)
 ‎
 ‎Our goal is to keep improving the same product API rather than creating unnecessary endpoints.
 ‎
+
+
 

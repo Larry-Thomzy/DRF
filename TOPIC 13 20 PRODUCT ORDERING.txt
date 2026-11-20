@@ -1,0 +1,306 @@
+# TOPIC 13.20 — PRODUCT ORDERING (SORTING) IN DJANGO REST FRAMEWORK
+
+## 1. Introduction
+
+Product ordering, also known as sorting, allows API consumers to determine the sequence in which products are returned.
+
+For example, an eCommerce application might allow customers to:
+
+- View products from cheapest to most expensive.
+- View products from most expensive to cheapest.
+- Arrange products alphabetically.
+- View the newest products first.
+- View products with the highest stock first.
+
+Instead of creating separate endpoints for these operations, we can use query parameters.
+
+## 2. Understanding Django ORM `order_by()`
+
+Django ORM provides the `order_by()` method to arrange QuerySets.
+
+Example:
+
+```python
+products = Product.objects.all().order_by('price')
+```
+
+This arranges products by price in ascending order.
+
+Ascending means smallest to largest.
+
+To arrange products in descending order:
+
+```python
+products = Product.objects.all().order_by('-price')
+```
+
+The minus sign (`-`) before the field name indicates descending order.
+
+Descending means largest to smallest.
+
+### More examples
+
+```python
+# Alphabetical order
+products = Product.objects.all().order_by('name')
+
+# Reverse alphabetical order
+products = Product.objects.all().order_by('-name')
+
+# Lowest stock first
+products = Product.objects.all().order_by('stock')
+
+# Highest stock first
+products = Product.objects.all().order_by('-stock')
+
+# Newest products first
+products = Product.objects.all().order_by('-created_at')
+```
+
+**Important:** `order_by()` returns a new QuerySet. It does not permanently rearrange the records in your database.
+
+## 3. Accepting ordering from API consumers
+
+We want API consumers to control the ordering through URL query parameters.
+
+We can achieve this using:
+
+```python
+request.query_params.get('ordering')
+```
+
+For example:
+
+```text
+/api/products/?ordering=price
+```
+
+The API receives `price` as the requested ordering field.
+
+We can then pass that value to Django's `order_by()` method.
+
+Basic example:
+
+```python
+ordering = request.query_params.get('ordering')
+
+if ordering:
+    products = products.order_by(ordering)
+```
+
+However, this basic implementation has a security and validation concern.
+
+## 4. Why should we validate ordering fields?
+
+Imagine an API consumer sends:
+
+```text
+/api/products/?ordering=password
+```
+
+We should not allow API consumers to order products using arbitrary model fields.
+
+Instead, we should define the fields that our API permits.
+
+This is called an **allowlist**.
+
+Example:
+
+```python
+allowed_ordering = [
+    'name',
+    'price',
+    'stock',
+    'created_at'
+]
+```
+
+We can then validate the requested field before using it.
+
+Because descending ordering uses a minus sign, we first remove that sign when checking the field:
+
+```python
+ordering = request.query_params.get('ordering')
+
+allowed_ordering = [
+    'name',
+    'price',
+    'stock',
+    'created_at'
+]
+
+if ordering:
+    field = ordering.lstrip('-')
+
+    if field not in allowed_ordering:
+        return Response(
+            {'error': 'Invalid ordering field.'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    products = products.order_by(ordering)
+```
+
+Now the API only accepts the ordering fields we have explicitly permitted.
+
+## 5. Combining ordering with filtering, searching and pagination
+
+Our existing product endpoint already supports:
+
+- Price filtering.
+- Stock filtering.
+- Product searching.
+- Pagination.
+
+We want ordering to work alongside all these features.
+
+For example:
+
+```text
+/api/products/?ordering=price&page=1
+```
+
+```text
+/api/products/?in_stock=true&ordering=-price
+```
+
+```text
+/api/products/?search=samsung&ordering=name&page=1
+```
+
+```text
+/api/products/?min_price=50000&max_price=500000&in_stock=true&ordering=-created_at&page=1
+```
+
+### Important execution sequence
+
+The correct sequence is:
+
+1. Retrieve the products.
+2. Apply price filters.
+3. Apply stock filters.
+4. Apply search.
+5. Apply ordering.
+6. Apply pagination.
+7. Serialize the current page.
+8. Return the paginated response.
+
+Ordering must happen before pagination because we want the paginator to work with an already-sorted QuerySet.
+
+## 6. Practical implementation
+
+In `products/views.py`, introduce the ordering query parameter:
+
+```python
+ordering = request.query_params.get('ordering')
+```
+
+After your existing search block, add the ordering validation and implementation:
+
+```python
+allowed_ordering = [
+    'name',
+    'price',
+    'stock',
+    'created_at'
+]
+
+if ordering:
+    field = ordering.lstrip('-')
+
+    if field not in allowed_ordering:
+        return Response(
+            {'error': 'Invalid ordering field.'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    products = products.order_by(ordering)
+```
+
+Keep your existing pagination code immediately after this block:
+
+```python
+paginator = ProductPagination()
+
+page = paginator.paginate_queryset(
+    products,
+    request
+)
+
+serializer = ProductSerializer(page, many=True)
+
+return paginator.get_paginated_response(serializer.data)
+```
+
+Your POST and product detail views do not need to change.
+
+## 7. Testing through the browser
+
+Assuming your API is running locally at `127.0.0.1:8000`, test these URLs.
+
+| Test | URL |
+|---|---|
+| Cheapest products first | `/api/products/?ordering=price` |
+| Most expensive first | `/api/products/?ordering=-price` |
+| Alphabetical order | `/api/products/?ordering=name` |
+| Reverse alphabetical | `/api/products/?ordering=-name` |
+| Highest stock first | `/api/products/?ordering=-stock` |
+| Newest products first | `/api/products/?ordering=-created_at` |
+| Search and ordering | `/api/products/?search=samsung&ordering=price` |
+| Filtering and ordering | `/api/products/?in_stock=true&ordering=-price` |
+| Ordering and pagination | `/api/products/?ordering=price&page=1` |
+
+Also test an invalid ordering field:
+
+```text
+/api/products/?ordering=password
+```
+
+Expected result:
+
+```json
+{
+    "error": "Invalid ordering field."
+}
+```
+
+The response should have HTTP status `400 Bad Request`.
+
+## 8. Key concepts to remember
+
+| Concept | Meaning |
+|---|---|
+| Sorting | Arranging records in a particular sequence |
+| `order_by()` | Django ORM method for ordering QuerySets |
+| Ascending | Smallest to largest, or A to Z |
+| Descending | Largest to smallest, or Z to A |
+| `-price` | Orders by price in descending order |
+| Query parameters | Values passed through the URL |
+| Allowlist | A predefined collection of permitted values |
+| Validation | Checking whether a supplied value is acceptable |
+
+## 9. Practical exercises
+
+After implementing the feature, answer these questions:
+
+1. What is the difference between `order_by('price')` and `order_by('-price')`?
+2. Why do we use `request.query_params.get('ordering')`?
+3. Why should we validate the requested ordering field?
+4. Why must ordering happen before pagination?
+5. What happens if a user requests `?ordering=-stock`?
+6. What is the difference between filtering and ordering?
+
+### Practical challenge
+
+Implement ordering in your existing `products_list` view.
+
+Your implementation must:
+
+- Support `name`, `price`, `stock`, and `created_at`.
+- Support ascending and descending ordering.
+- Reject invalid ordering fields with HTTP 400.
+- Work alongside filtering and searching.
+- Work alongside pagination.
+- Leave POST and product detail functionality intact.
+
+**End of Topic 13.20.**

@@ -1,0 +1,343 @@
+# TOPIC 13.21 — DEFAULT ORDERING AND MULTIPLE-FIELD ORDERING IN DJANGO REST FRAMEWORK
+
+## 1. Introduction
+
+In the previous lesson, we implemented product ordering using Django ORM's `order_by()` method.
+
+Our API now allows clients to request:
+ 
+- Cheapest products first.
+- Most expensive products first.
+- Products alphabetically.
+- Products with the highest stock first.
+- Newest products first.
+
+However, there are two improvements we can make:
+
+1. Default ordering: What happens when the client doesn't specify an ordering field?
+2. Multiple-field ordering: What happens when we want to sort using more than one field?
+
+These are the focus of this lesson.
+
+## 2. Understanding Default Ordering
+
+Default ordering means defining how records should be arranged when the API consumer does not provide an ordering parameter.
+
+For example, imagine a client sends:
+
+```text
+/api/products/
+```
+
+There is no `ordering` parameter.
+
+We can decide that products should automatically appear from newest to oldest.
+
+We can implement this using:
+
+```python
+ordering = request.query_params.get('ordering', '-created_at')
+```
+
+Let's understand this statement.
+
+`request.query_params.get()` accepts two arguments here:
+
+- First argument: The name of the query parameter.
+- Second argument: The default value to return if the parameter is missing.
+
+Therefore:
+
+```python
+ordering = request.query_params.get('ordering', '-created_at')
+```
+
+means:
+
+- If the client provides an ordering parameter, use it.
+- If the client doesn't provide one, use `-created_at`.
+
+The result is that the newest products appear first by default.
+
+### Important distinction
+
+Compare:
+
+```python
+ordering = request.query_params.get('ordering')
+```
+
+With:
+
+```python
+ordering = request.query_params.get('ordering', '-created_at')
+```
+
+The first returns `None` when the parameter is missing.
+
+The second returns `-created_at` when the parameter is missing.
+
+## 3. Implementing Default Ordering
+
+In our existing `products_list` view, locate:
+
+```python
+ordering = request.query_params.get('ordering')
+```
+
+Replace it with:
+
+```python
+ordering = request.query_params.get('ordering', '-created_at')
+```
+
+Your existing validation and `order_by()` implementation can remain unchanged.
+
+Because `ordering` now always has a value, the API will apply the default ordering whenever the client omits the parameter.
+
+## 4. Understanding Multiple-Field Ordering
+
+Sometimes sorting by one field isn't enough.
+
+Imagine these products:
+
+| Product | Price | Stock |
+|---|---:|---:|
+| Samsung A55 | 450000 | 15 |
+| iPhone 13 | 650000 | 8 |
+| HP EliteBook | 850000 | 5 |
+| Dell Inspiron | 850000 | 7 |
+
+Suppose we want to:
+
+1. Sort products by price, from cheapest to most expensive.
+2. When two products have the same price, arrange them by stock, from highest to lowest.
+
+We can achieve this using multiple fields in `order_by()`.
+
+```python
+products = Product.objects.all().order_by('price', '-stock')
+```
+
+Notice that we supplied two fields.
+
+The first field is the primary ordering field.
+
+The second field is the secondary ordering field.
+
+Django applies the second field when records have equal values in the first field.
+
+### Understanding the result
+
+For example, these two products have the same price:
+
+| Product | Price | Stock |
+|---|---:|---:|
+| Dell Inspiron | 850000 | 7 |
+| HP EliteBook | 850000 | 5 |
+
+Because we used:
+
+```python
+.order_by('price', '-stock')
+```
+
+Dell Inspiron appears before HP EliteBook because it has more stock.
+
+## 5. Multiple-Field Ordering Through Query Parameters
+
+We can allow API consumers to supply multiple ordering fields through a comma-separated query parameter.
+
+Example:
+
+```text
+/api/products/?ordering=price,-stock
+```
+
+This means:
+
+- First, sort by price in ascending order.
+- Then, for products with equal prices, sort by stock in descending order.
+
+Other examples:
+
+```text
+/api/products/?ordering=name,price
+```
+
+Alphabetical order first, then lowest price among products with the same name.
+
+```text
+/api/products/?ordering=-price,name
+```
+
+Most expensive first, then alphabetical order among products with the same price.
+
+## 6. Updating Our Validation Logic
+
+Previously, our validation handled one field:
+
+```python
+field = ordering[1:] if ordering.startswith('-') else ordering
+
+if field not in allowed_ordering:
+    return Response(
+        {'error': 'Invalid ordering field.'},
+        status=status.HTTP_400_BAD_REQUEST
+    )
+```
+
+Now, because the client can supply multiple fields, we need to validate each field individually.
+
+Example implementation:
+
+```python
+allowed_ordering = [
+    'name',
+    'price',
+    'stock',
+    'created_at'
+]
+
+if ordering:
+    ordering_fields = ordering.split(',')
+
+    for field in ordering_fields:
+        clean_field = field[1:] if field.startswith('-') else field
+
+        if clean_field not in allowed_ordering:
+            return Response(
+                {'error': 'Invalid ordering field.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    products = products.order_by(*ordering_fields)
+```
+
+### Understanding `split(',')`
+
+The `split()` method separates a string into a list using the specified separator.
+
+Example:
+
+```python
+ordering = 'price,-stock'
+
+ordering_fields = ordering.split(',')
+```
+
+The result is:
+
+```python
+['price', '-stock']
+```
+
+### Understanding the asterisk (`*`)
+
+In this statement:
+
+```python
+products.order_by(*ordering_fields)
+```
+
+The asterisk unpacks the list into separate positional arguments.
+
+It is equivalent to:
+
+```python
+products.order_by('price', '-stock')
+```
+
+This allows Django to receive multiple ordering fields.
+
+## 7. Important Validation Improvement
+
+Our validation should also reject empty fields.
+
+For example:
+
+```text
+/api/products/?ordering=price,
+```
+
+Splitting this produces:
+
+```python
+['price', '']
+```
+
+An empty field should not be accepted.
+
+A safer implementation is:
+
+```python
+if ordering:
+    ordering_fields = ordering.split(',')
+
+    for field in ordering_fields:
+        clean_field = field[1:] if field.startswith('-') else field
+
+        if not clean_field or clean_field not in allowed_ordering:
+            return Response(
+                {'error': 'Invalid ordering field.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    products = products.order_by(*ordering_fields)
+```
+
+## 8. Testing Through the Browser
+
+Test the following URLs.
+
+| Test | URL |
+|---|---|
+| Default ordering | `/api/products/` |
+| Explicit ascending price | `/api/products/?ordering=price` |
+| Explicit descending price | `/api/products/?ordering=-price` |
+| Price then stock | `/api/products/?ordering=price,-stock` |
+| Price then name | `/api/products/?ordering=price,name` |
+| Descending price then name | `/api/products/?ordering=-price,name` |
+| Search and multiple ordering | `/api/products/?search=samsung&ordering=price,-stock` |
+| Filtering and multiple ordering | `/api/products/?in_stock=true&ordering=price,-stock&page=1` |
+| Invalid field | `/api/products/?ordering=password` |
+| Empty second field | `/api/products/?ordering=price,` |
+
+The invalid requests should return HTTP 400.
+
+## 9. Important Concepts to Remember
+
+| Concept | Meaning |
+|---|---|
+| Default ordering | Ordering applied when no ordering parameter is supplied |
+| Secondary ordering | Another field used when the primary field has equal values |
+| `split(',')` | Separates comma-delimited strings into a list |
+| `*` unpacking | Passes list elements as separate function arguments |
+| `order_by()` | Django ORM method for ordering QuerySets |
+
+## 10. Practical Exercises
+
+Answer these questions after studying the lesson:
+
+1. What is the difference between `request.query_params.get('ordering')` and `request.query_params.get('ordering', '-created_at')`?
+2. What does default ordering achieve in an API?
+3. In `order_by('price', '-stock')`, which field has priority?
+4. What does the `split(',')` method do?
+5. What is the purpose of the asterisk in `order_by(*ordering_fields)`?
+6. Why should we validate every field in a multiple-field ordering request?
+
+### Practical Challenge
+
+Update your existing `products_list` view to support:
+
+- Default ordering by newest products first.
+- Multiple-field ordering.
+- Ascending and descending ordering for every allowed field.
+- Validation of every requested ordering field.
+- Rejection of empty or invalid ordering fields.
+- Compatibility with filtering, searching, and pagination.
+
+Do not modify your POST or product detail views.
+
+**End of Topic 13.21.**
+
