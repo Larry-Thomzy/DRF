@@ -1,0 +1,103 @@
+# Topic 14.1 — Understanding Authentication and Authorization in Django REST Framework
+
+## 1. What is Authentication?
+
+Authentication is the process of verifying the identity of a user attempting to access an application.
+
+In simple terms, authentication answers:
+
+**"Who are you?"**
+
+For example, when a user logs into an eCommerce application using an email and password, the application checks whether those credentials belong to a valid account.
+
+If the credentials are valid, the user is authenticated.
+
+Common authentication methods include:
+- Email and password.
+- Token authentication.
+- JSON Web Tokens (JWT).
+- Google authentication.
+- Apple Sign-In.
+
+## 2. What is Authorization?
+
+Authorization determines what an authenticated user is allowed to access or do within an application.
+
+It answers:
+
+**"What are you allowed to do?"**
+
+For example:
+- A customer can view products.
+- A customer can manage their own cart.
+- An administrator can manage products.
+- A customer cannot delete another customer's order.
+
+## 3. Authentication vs Authorization
+
+| Authentication | Authorization |
+|---|---|
+| Verifies identity. | Determines access rights. |
+| Answers "Who are you?" | Answers "What can you do?" |
+| Happens before access decisions. | Controls access to protected resources. |
+| Example: Login. | Example: Permission to delete a product. |
+
+Authentication does not automatically grant permission to perform every action.
+
+## 4. How DRF Handles Authentication
+
+Django REST Framework provides authentication classes that determine who is making an API request.
+
+Examples include:
+- `SessionAuthentication`
+- `BasicAuthentication`
+- `TokenAuthentication`
+
+JWT authentication is commonly added through a third-party package such as Simple JWT.
+
+DRF exposes two important request attributes:
+
+### `request.user`
+
+Represents the user associated with the request.
+
+If the request is authenticated, this normally contains the authenticated Django user.
+
+If it is unauthenticated, it normally contains `AnonymousUser`.
+
+### `request.auth`
+
+Contains the authentication credentials or authentication information associated with the request. Its exact value depends on the authentication method.
+
+## 5. How DRF Handles Permissions
+
+Authentication identifies the requester. Permission classes determine whether that requester can access a particular endpoint.
+
+Examples:
+- `AllowAny`
+- `IsAuthenticated`
+- `IsAdminUser`
+- `IsAuthenticatedOrReadOnly`
+
+We will implement and test these later.
+
+## 6. Our Authentication Learning Sequence
+
+1. Understanding authentication and authorization.
+2. Understanding Django's User model.
+3. User registration.
+4. Password hashing and validation.
+5. Login and logout.
+6. Token authentication.
+7. JWT authentication.
+8. Access tokens and refresh tokens.
+9. Password reset.
+10. Permissions and protected endpoints.
+11. Google OAuth authentication.
+12. Apple Sign-In.
+13. Connecting social accounts to existing accounts.
+14. Authentication testing.
+
+## Lesson Objective
+
+By the end of this phase, we should be able to build an API that supports traditional email/password authentication, JWT authentication, Google Sign-In, and Apple Sign-In, with appropriate authorization and security controls.

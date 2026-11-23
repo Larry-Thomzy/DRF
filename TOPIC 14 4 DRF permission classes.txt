@@ -1,0 +1,473 @@
+# TOPIC 14.4 — DJANGO REST FRAMEWORK PERMISSION CLASSES
+
+**Course:** Django REST Framework — eCommerce Backend Development  
+**Phase:** Authentication and User Management  
+**Practical Environment:** Django + Django REST Framework  
+**Project:** eCommerce Backend
+
+---
+
+## 1. INTRODUCTION TO DRF PERMISSIONS
+
+In Django REST Framework, permission classes determine whether a user is allowed to access an API endpoint.
+
+Remember:
+
+- Authentication identifies the requester.
+- Authorization determines what the requester is allowed to do.
+
+DRF provides permission classes that allow us to control access to our API endpoints.
+
+For example, in our eCommerce application:
+
+- Anyone should be able to view products.
+- Only authenticated users should be able to create products.
+- Only authorized users should be able to update or delete products.
+
+We can enforce these rules using DRF permission classes.
+
+## 2. UNDERSTANDING DRF PERMISSION CLASSES
+
+DRF provides several built-in permission classes.
+
+### 2.1 AllowAny
+
+```python
+from rest_framework.permissions import AllowAny
+```
+
+`AllowAny` allows every request to access the endpoint, whether authenticated or anonymous.
+
+Example:
+
+```python
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def products_list(request):
+    ...
+```
+
+Use cases:
+- Public product listings.
+- Public product details.
+- Public registration endpoints.
+
+### 2.2 IsAuthenticated
+
+```python
+from rest_framework.permissions import IsAuthenticated
+```
+
+`IsAuthenticated` allows access only when the requester is authenticated.
+
+Example:
+
+```python
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def profile(request):
+    ...
+```
+
+An anonymous requester will be denied access.
+
+Use cases:
+- Customer profiles.
+- Shopping cart.
+- Customer order history.
+- Protected account information.
+
+### 2.3 IsAdminUser
+
+```python
+from rest_framework.permissions import IsAdminUser
+```
+
+`IsAdminUser` allows access only when:
+
+```python
+request.user.is_staff == True
+```
+
+It does not specifically check `is_superuser`.
+
+Use cases:
+- Administrative product management.
+- Staff-only management endpoints.
+- Administrative dashboards.
+
+### 2.4 IsAuthenticatedOrReadOnly
+
+```python
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
+```
+
+This permission allows:
+- Anonymous users to perform read-only requests.
+- Authenticated users to perform read and write requests.
+
+Read-only methods are represented by:
+
+```python
+SAFE_METHODS = ('GET', 'HEAD', 'OPTIONS')
+```
+
+For example:
+
+| HTTP Method | Anonymous user | Authenticated user |
+|---|---|---|
+| GET | Allowed | Allowed |
+| HEAD | Allowed | Allowed |
+| OPTIONS | Allowed | Allowed |
+| POST | Denied | Allowed |
+| PUT | Denied | Allowed |
+| PATCH | Denied | Allowed |
+| DELETE | Denied | Allowed |
+
+This is particularly useful for our product endpoints.
+
+**Important:** `IsAuthenticatedOrReadOnly` does not distinguish between ordinary authenticated users and administrators. We will implement more restrictive permissions later.
+
+---
+
+## 3. UNDERSTANDING THE permission_classes DECORATOR
+
+When working with function-based API views, DRF allows us to assign permission classes using:
+
+```python
+@permission_classes([IsAuthenticated])
+```
+
+For example:
+
+```python
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def profile(request):
+    return Response({
+        "username": request.user.username
+    })
+```
+
+Let's understand what happens:
+
+1. A client sends a request.
+2. DRF performs authentication using its configured authentication classes.
+3. DRF checks the assigned permission classes.
+4. If the permission check passes, the view executes.
+5. Otherwise, DRF rejects the request.
+
+---
+
+# 4. PRACTICAL IMPLEMENTATION — PROTECTING OUR PRODUCT ENDPOINTS
+
+We will now apply permissions to our existing eCommerce API.
+
+Our requirements:
+
+1. Anyone can view products.
+2. Only authenticated users can create products.
+3. Only authenticated users can update products.
+4. Only authenticated users can delete products.
+
+For this first implementation, we will use `IsAuthenticatedOrReadOnly`.
+
+## Step 1: Open products/views.py
+
+Locate your existing `products/views.py` file.
+
+Add the following import:
+
+```python
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
+```
+
+Your other existing imports should remain intact.
+
+## Step 2: Protect the product list endpoint
+
+Your existing function currently supports GET and POST.
+
+Modify its decorators:
+
+```python
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticatedOrReadOnly])
+def products_list(request):
+```
+
+Keep the existing implementation inside the function unchanged.
+
+The permission class now controls access to both methods.
+
+Result:
+
+- Anonymous users can retrieve products using GET.
+- Anonymous users cannot create products using POST.
+- Authenticated users can perform both operations.
+
+## Step 3: Protect the product detail endpoint
+
+Your detail endpoint currently supports:
+
+- GET
+- PUT
+- PATCH
+- DELETE
+
+Modify its decorators:
+
+```python
+@api_view(['GET', 'PUT', 'PATCH', 'DELETE'])
+@permission_classes([IsAuthenticatedOrReadOnly])
+def product_detail(request, pk):
+```
+
+Keep the existing implementation unchanged.
+
+Result:
+
+- Anyone can retrieve a product.
+- Only authenticated users can update or delete a product.
+
+## Step 4: Understand the complete implementation
+
+The important part of the implementation is:
+
+```python
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
+```
+
+For the product list:
+
+```python
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticatedOrReadOnly])
+def products_list(request):
+    ...
+```
+
+For the product detail:
+
+```python
+@api_view(['GET', 'PUT', 'PATCH', 'DELETE'])
+@permission_classes([IsAuthenticatedOrReadOnly])
+def product_detail(request, pk):
+    ...
+```
+
+We are not rewriting our existing CRUD, filtering, searching, pagination, or ordering logic.
+
+We are adding an authorization layer to the existing endpoints.
+
+---
+
+# 5. CONFIGURING THE DRF BROWSABLE API LOGIN
+
+Our application does not yet have its own registration and login APIs.
+
+However, DRF provides built-in login and logout pages that are useful for testing SessionAuthentication through the browsable API.
+
+Open your main project URL configuration:
+
+`ecommerce/urls.py`
+
+Add the following import:
+
+```python
+from django.urls import include, path
+```
+
+Then add the DRF authentication URLs:
+
+```python
+path('api-auth/', include('rest_framework.urls')),
+```
+
+Your URL configuration should resemble:
+
+```python
+from django.contrib import admin
+from django.urls import include, path
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('api/', include('products.urls')),
+    path('api-auth/', include('rest_framework.urls')),
+]
+```
+
+This provides the browsable API login and logout interface.
+
+**Important distinction:** These are DRF's built-in browsable API authentication pages. They are not the registration and login APIs we will build for our eCommerce application.
+
+---
+
+# 6. TESTING THE IMPLEMENTATION
+
+We will test our permission rules through the browser.
+
+Make sure your development server is running:
+
+```bash
+python manage.py runserver
+```
+
+### Test 1: Anonymous product listing
+
+Open:
+
+```text
+http://127.0.0.1:8000/api/products/
+```
+
+Expected result:
+
+The product listing should be accessible without logging in.
+
+### Test 2: Anonymous product creation
+
+While logged out, open the product listing endpoint.
+
+Try submitting a POST request using the browsable API.
+
+Expected result:
+
+The request should be rejected because the user is not authenticated.
+
+### Test 3: Log in through the browsable API
+
+Open:
+
+```text
+http://127.0.0.1:8000/api-auth/login/
+```
+
+Log in using an existing Django user account.
+
+Return to:
+
+```text
+http://127.0.0.1:8000/api/products/
+```
+
+The browsable API should now recognize your authenticated session.
+
+### Test 4: Authenticated product creation
+
+Submit a valid POST request.
+
+Expected result:
+
+The product should be created successfully if the serializer validation passes.
+
+### Test 5: Anonymous product update and deletion
+
+Log out and attempt to:
+
+- PUT a product.
+- PATCH a product.
+- DELETE a product.
+
+Expected result:
+
+All three requests should be rejected.
+
+### Test 6: Authenticated product update and deletion
+
+Log in again and test the same operations.
+
+Expected result:
+
+The permission check should allow these requests, assuming the request data is valid and the product exists.
+
+---
+
+# 7. UNDERSTANDING HTTP RESPONSES
+
+When permission checks fail, DRF returns an appropriate HTTP error response.
+
+Common responses include:
+
+| Status | Meaning |
+|---|---|
+| 200 | Request successful. |
+| 201 | Resource successfully created. |
+| 401 | Authentication credentials are missing or invalid, depending on the authentication configuration. |
+| 403 | Request is forbidden. |
+| 400 | Request data is invalid. |
+| 404 | Requested resource does not exist. |
+
+**Important:** Whether an unauthenticated request receives 401 or 403 depends on the configured authentication classes and their challenge behavior.
+
+---
+
+# 8. PRACTICAL EXERCISES
+
+### Exercise 1 — IsAuthenticated
+
+Create a temporary test endpoint that uses `IsAuthenticated`.
+
+The endpoint should return:
+
+```json
+{
+    "message": "Welcome, authenticated user!"
+}
+```
+
+Test it while logged in and logged out.
+
+### Exercise 2 — IsAdminUser
+
+Create a temporary endpoint that uses `IsAdminUser`.
+
+Test the endpoint using:
+- A normal customer account.
+- A staff account.
+- A superuser account.
+
+Observe the difference.
+
+### Exercise 3 — AllowAny
+
+Create a temporary public endpoint using `AllowAny`.
+
+Verify that both anonymous and authenticated users can access it.
+
+### Exercise 4 — IsAuthenticatedOrReadOnly
+
+Verify that anonymous users can view products but cannot create, update, or delete them.
+
+---
+
+# 9. IMPORTANT TAKEAWAYS
+
+1. DRF permission classes control access to API endpoints.
+2. `AllowAny` permits everyone.
+3. `IsAuthenticated` requires an authenticated user.
+4. `IsAdminUser` requires `is_staff=True`.
+5. `IsAuthenticatedOrReadOnly` allows public read access and authenticated write access.
+6. Permission classes can be applied to function-based views using `@permission_classes`.
+7. Authentication and permissions work together.
+8. Passing an endpoint-level permission check does not automatically grant ownership of every object.
+
+## NEXT TOPIC
+
+**Topic 14.5 — Building the User Registration API**
+
+We will implement:
+
+- Registration serializer.
+- Registration view.
+- Registration URL.
+- Username and email validation.
+- Password validation.
+- Secure password hashing.
+- Creating users through the API.
+- Testing registration through the DRF browsable API.

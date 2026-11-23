@@ -1,0 +1,318 @@
+# TOPIC 14.2 — UNDERSTANDING AND WORKING WITH DJANGO'S USER MODEL
+
+**Course:** Django REST Framework — eCommerce Backend Development  
+**Phase:** Authentication and User Management  
+**Practical Environment:** Django + Django REST Framework
+
+---
+
+## 1. INTRODUCTION TO DJANGO'S USER MODEL
+
+Django provides a built-in User model that represents users within an application.
+
+Instead of manually creating a system to store usernames, passwords, and user information, Django provides an existing authentication system.
+
+We can import the default User model using:
+
+```python
+from django.contrib.auth.models import User
+```
+
+This model is responsible for storing and managing user account information.
+
+## 2. UNDERSTANDING THE USER MODEL FIELDS
+
+The default Django User model contains several important fields.
+
+| Field | Description |
+|---|---|
+| `id` | Unique identifier assigned to each user. |
+| `username` | Username associated with the account. |
+| `first_name` | User's first name. |
+| `last_name` | User's last name. |
+| `email` | User's email address. |
+| `password` | Stores the user's hashed password. |
+| `is_active` | Determines whether the account is active. |
+| `is_staff` | Determines whether the user can access the Django admin site. |
+| `is_superuser` | Grants the user all permissions without assigning them individually. |
+| `date_joined` | Records when the account was created. |
+
+**Important distinction:**
+
+- `is_staff=True` allows a user to access the Django admin site, subject to the applicable admin permissions.
+- `is_superuser=True` grants all permissions.
+- `is_active=False` disables the account for normal authentication.
+
+Being a staff user does not automatically make someone a superuser.
+
+---
+
+## 3. UNDERSTANDING PASSWORD HASHING
+
+Django does not store passwords as plain text.
+
+Instead, it uses password hashing to protect users' credentials.
+
+For example, suppose a user registers with:
+
+```text
+mypassword123
+```
+
+Django does not save that exact password in the database. It stores a hashed representation.
+
+Password hashing is important because if someone gains unauthorized access to the database, they cannot immediately read the original passwords.
+
+**Hashing vs Encryption**
+
+- Hashing is designed to be one-way.
+- Encryption is designed to be reversible using the appropriate key.
+
+Django uses configurable password hashers, including PBKDF2 by default.
+
+### 3.1 The set_password() method
+
+The `set_password()` method hashes a raw password and assigns the resulting hash to the user's password field.
+
+
+```python
+user.set_password("mypassword123")
+```
+
+Note: This method does not save the user to the database automatically. Call `user.save()` afterward when working with an existing user.
+
+### 3.2 The check_password() method
+
+The `check_password()` method verifies whether a supplied password matches the stored password hash.
+
+```python
+user.check_password("mypassword123")
+```
+
+It returns:
+
+- `True` if the password is correct.
+- `False` if the password is incorrect.
+
+Django uses the stored hash's algorithm and salt to verify the password.
+
+---
+
+# 4. PRACTICAL IMPLEMENTATION — WORKING WITH THE USER MODEL
+
+We will interact with Django's User model through the Django shell.
+
+## Step 1: Activate the virtual environment
+
+Navigate to your Django project directory.
+
+Activate your virtual environment:
+
+```bash
+source venv/bin/activate
+```
+
+## Step 2: Open the Django shell
+
+Run:
+
+```bash
+python manage.py shell
+```
+
+The Django shell allows us to interact directly with our application's models and database.
+
+## Step 3: Import the User model
+
+Inside the shell:
+
+```python
+from django.contrib.auth.models import User
+```
+
+We can now interact with the User model using Django's ORM.
+
+## Step 4: Create a user
+
+```python
+user = User.objects.create_user(
+    username="larry",
+    email="larry@example.com",
+    password="MySecurePass123!"
+)
+```
+
+The `create_user()` method creates a new user and automatically hashes the supplied password.
+
+It also saves the user to the database.
+
+## Step 5: Inspect the created user
+
+```python
+user
+```
+
+Access individual fields:
+
+```python
+user.username
+user.email
+user.password
+```
+
+The password field should display a hashed value rather than the original password.
+
+## Step 6: Verify the password
+
+Check the correct password:
+
+```python
+user.check_password("MySecurePass123!")
+```
+
+Expected result:
+
+```python
+True
+```
+
+Now try an incorrect password:
+
+```python
+user.check_password("wrongpassword")
+```
+
+Expected result:
+
+```python
+False
+```
+
+## Step 7: Update user information
+
+We can modify a user's information through the ORM.
+
+```python
+user.first_name = "Larry"
+user.last_name = "Thomzy"
+
+user.save()
+```
+
+The `save()` method persists the changes to the database.
+
+Verify the changes:
+
+```python
+user.first_name
+user.last_name
+```
+
+## Step 8: Retrieve a user
+
+Retrieve a specific user using their username:
+
+```python
+User.objects.get(username="larry")
+```
+
+Retrieve all registered users:
+
+```python
+User.objects.all()
+```
+
+---
+
+# 5. CREATING A USER VS UPDATING A USER
+
+There is an important distinction between these operations.
+
+### Creating a new user
+
+```python
+User.objects.create_user(
+    username="david",
+    email="david@example.com",
+    password="DavidPass123!"
+)
+```
+
+This creates a new database record.
+
+### Updating an existing user's password
+
+```python
+user = User.objects.get(username="larry")
+
+user.set_password("NewSecurePass123!")
+user.save()
+```
+
+We use `set_password()` instead of directly assigning a raw password to `user.password`.
+
+Never do this:
+
+```python
+user.password = "mypassword123"
+user.save()
+```
+
+That would store the raw password rather than a properly hashed password.
+
+---
+
+# 6. PRACTICAL EXERCISES
+
+Complete the following exercises using the Django shell.
+
+### Exercise 1 — User creation
+
+Create a user with these details:
+
+- Username: `student1`
+- Email: `student1@example.com`
+- Password: `StudentPass123!`
+
+### Exercise 2 — Password verification
+
+Verify the correct password and then test an incorrect password.
+
+Observe the returned Boolean values.
+
+### Exercise 3 — User information
+
+Update the user's first name and last name.
+
+Save the changes and retrieve the updated information.
+
+### Exercise 4 — User retrieval
+
+Retrieve the user using their username.
+
+Then retrieve all users in the database.
+
+### Exercise 5 — Password update
+
+Change the user's password using `set_password()`.
+
+Verify that the old password no longer works and the new password does.
+
+---
+
+# 7. IMPORTANT TAKEAWAYS
+
+1. Django provides a built-in User model.
+2. The User model stores account information.
+3. `create_user()` creates a user and hashes the password.
+4. `set_password()` hashes a password but does not save the user automatically.
+5. `check_password()` verifies a supplied password against the stored hash.
+6. `save()` persists changes to the database.
+7. `is_staff` and `is_superuser` serve different purposes.
+8. Never store raw passwords in the database.
+
+## NEXT TOPIC
+
+**Topic 14.3 — Understanding Django User Permissions and Account Status**
+
+We will examine `is_staff`, `is_superuser`, `is_active`, groups, and permissions before implementing our registration API.

@@ -1,0 +1,517 @@
+# TOPIC 14.3 — DJANGO USER PERMISSIONS AND ACCOUNT STATUS
+
+**Course:** Django REST Framework — eCommerce Backend Development  
+**Phase:** Authentication and User Management  
+**Practical Environment:** Django + Django REST Framework
+
+---
+
+## 1. INTRODUCTION
+
+In Django, authentication identifies a user, while authorization determines what that user is allowed to do.
+
+Django provides several built-in fields and mechanisms for controlling user access.
+
+The most important ones include:
+
+- `is_active`
+- `is_staff`
+- `is_superuser`
+- User permissions
+- Groups
+
+Let's understand each one.
+
+## 2. UNDERSTANDING is_active
+
+The `is_active` field determines whether a user account is active.
+
+Example:
+
+```python
+user.is_active = True
+user.save()
+```
+
+This means the account is active.
+
+To deactivate an account:
+
+```python
+user.is_active = False
+user.save()
+```
+
+Django's standard authentication backends reject inactive users during normal authentication.
+
+**Real-world example:**
+
+Suppose a customer violates your eCommerce platform's policies.
+
+An administrator may deactivate the customer's account instead of permanently deleting it.
+
+The customer's account remains in the database, but normal authentication is blocked.
+
+## 3. UNDERSTANDING is_staff
+
+The `is_staff` field determines whether a user is permitted to access the Django admin site.
+
+Example:
+
+```python
+user.is_staff = True
+user.save()
+```
+
+A staff user can access the admin site, provided the account is active and the relevant admin permissions allow access.
+
+However, being a staff user does not automatically grant every permission.
+
+For example:
+- A staff member may be allowed to view products.
+- Another staff member may be allowed to add products.
+- A staff member without deletion permission cannot delete products.
+
+## 4. UNDERSTANDING is_superuser
+
+The `is_superuser` field identifies users who have all permissions without needing individual permissions to be assigned.
+
+Example:
+
+```python
+user.is_superuser = True
+user.is_staff = True
+user.save()
+```
+
+A superuser has all permissions.
+
+Django's `createsuperuser` command creates an account with the appropriate administrative privileges.
+
+**Important distinction:**
+
+| Field | Purpose |
+|---|---|
+| `is_active` | Determines whether the account is active. |
+| `is_staff` | Allows access to the Django admin site, subject to admin checks. |
+| `is_superuser` | Grants all permissions. |
+
+A user can be a staff member without being a superuser.
+
+## 5. UNDERSTANDING DJANGO PERMISSIONS
+
+Django provides a permission system that controls which operations a user can perform on a model.
+
+When Django creates a model, it automatically creates four default permissions:
+
+1. `add` — Allows a user to create an object.
+2. `view` — Allows a user to view objects.
+3. `change` — Allows a user to modify objects.
+4. `delete` — Allows a user to delete objects.
+
+For example, if we have a Product model, Django creates permissions equivalent to:
+
+```text
+products.add_product
+products.view_product
+products.change_product
+products.delete_product
+```
+
+The exact permission names use the application's name and model name.
+
+### Checking a user's permission
+
+Django provides the `has_perm()` method.
+
+```python
+user.has_perm("products.add_product")
+```
+
+It returns:
+
+- `True` if the user has the permission.
+- `False` if the user does not have the permission.
+
+Other examples:
+
+```python
+user.has_perm("products.view_product")
+
+user.has_perm("products.change_product")
+
+user.has_perm("products.delete_product")
+```
+
+A superuser normally returns `True` for every permission check.
+
+## 6. UNDERSTANDING DJANGO GROUPS
+
+Imagine your eCommerce application has 20 staff members.
+
+Instead of assigning permissions individually to every staff member, we can create groups.
+
+A group allows us to assign permissions to multiple users through one reusable role.
+
+For example:
+
+| Group | Permissions |
+|---|---|
+| Product Managers | View, add, change products |
+| Support Staff | View products and orders |
+| Inventory Managers | View and change inventory |
+| Administrators | All permissions through superuser status or assigned permissions |
+
+A user can belong to one or more groups.
+
+Django provides the Group model:
+
+```python
+from django.contrib.auth.models import Group
+```
+
+We can retrieve a group:
+
+```python
+group = Group.objects.get(name="Product Managers")
+```
+
+We can assign a user to a group:
+
+```python
+user.groups.add(group)
+```
+
+We can remove a user from a group:
+
+```python
+user.groups.remove(group)
+```
+
+A user's permissions can come from direct user permissions and from their groups.
+
+## 7. UNDERSTANDING DJANGO'S PERMISSION CHECKING
+
+Django provides methods for checking permissions.
+
+### Check one permission
+
+```python
+user.has_perm("products.add_product")
+```
+
+### Check multiple permissions
+
+```python
+user.has_perms([
+    "products.view_product",
+    "products.add_product"
+])
+```
+
+`has_perms()` returns `True` only if the user has every permission in the supplied list.
+
+### Check whether the user belongs to a group
+
+```python
+user.groups.filter(name="Product Managers").exists()
+```
+
+This returns a Boolean value.
+
+---
+
+# 8. PRACTICAL IMPLEMENTATION — USING THE DJANGO SHELL
+
+We will perform these operations using the Django shell.
+
+## Step 1: Open the Django shell
+
+Activate your virtual environment and navigate to the project directory.
+
+```bash
+source venv/bin/activate
+```
+
+Then:
+
+```bash
+python manage.py shell
+```
+
+## Step 2: Import the required models
+
+```python
+from django.contrib.auth.models import User, Group, Permission
+```
+
+We import:
+
+- `User` to manage user accounts.
+- `Group` to manage user groups.
+- `Permission` to retrieve and assign permissions.
+
+## Step 3: Retrieve an existing user
+
+```python
+user = User.objects.get(username="larry")
+```
+
+Use the username of an account you previously created.
+
+Inspect the account status:
+
+```python
+user.is_active
+
+user.is_staff
+
+user.is_superuser
+```
+
+## Step 4: Modify account status
+
+Activate the user:
+
+```python
+user.is_active = True
+user.save()
+```
+
+Make the user a staff member:
+
+```python
+user.is_staff = True
+user.save()
+```
+
+Check the result:
+
+```python
+user.is_staff
+```
+
+To remove staff access:
+
+```python
+user.is_staff = False
+user.save()
+```
+
+Do not make your ordinary customer account a superuser just to test staff access.
+
+## Step 5: Retrieve Product permissions
+
+Django automatically creates default model permissions when migrations are applied.
+
+Retrieve the permission to add products:
+
+```python
+permission = Permission.objects.get(
+    codename="add_product",
+    content_type__app_label="products"
+)
+```
+
+Other permissions:
+
+```python
+view_permission = Permission.objects.get(
+    codename="view_product",
+    content_type__app_label="products"
+)
+
+change_permission = Permission.objects.get(
+    codename="change_product",
+    content_type__app_label="products"
+)
+
+delete_permission = Permission.objects.get(
+    codename="delete_product",
+    content_type__app_label="products"
+)
+```
+
+## Step 6: Assign a permission directly to a user
+
+```python
+user.user_permissions.add(permission)
+```
+
+Check whether the user has permission:
+
+```python
+user.has_perm("products.add_product")
+```
+
+Expected result:
+
+```python
+True
+```
+
+Remove the permission:
+
+```python
+user.user_permissions.remove(permission)
+```
+
+Check again:
+
+```python
+user.has_perm("products.add_product")
+```
+
+Expected result:
+
+```python
+False
+```
+
+Note: Permission checks may be cached on a user instance after the first check. When testing permission changes in the shell, retrieve a fresh user instance before checking again.
+
+## Step 7: Create a group
+
+```python
+group = Group.objects.create(
+    name="Product Managers"
+)
+```
+
+This creates a group named Product Managers.
+
+## Step 8: Assign permissions to the group
+
+```python
+group.permissions.add(
+    view_permission,
+    permission,
+    change_permission
+)
+```
+
+The Product Managers group now has permission to:
+
+- View products.
+- Add products.
+- Change products.
+
+It does not have the delete permission.
+
+## Step 9: Add a user to the group
+
+```python
+user.groups.add(group)
+```
+
+The user now receives the permissions assigned to the group.
+
+Retrieve a fresh user instance:
+
+```python
+user = User.objects.get(username="larry")
+```
+
+Check permissions:
+
+```python
+user.has_perm("products.view_product")
+
+user.has_perm("products.add_product")
+
+user.has_perm("products.change_product")
+
+user.has_perm("products.delete_product")
+```
+
+Expected results, assuming the user has no other permissions:
+
+```text
+True
+True
+True
+False
+```
+
+## Step 10: Remove a user from a group
+
+```python
+user.groups.remove(group)
+```
+
+Retrieve the user again and check the permissions.
+
+The permissions inherited from that group should no longer be available, unless the user receives them through another source.
+
+---
+
+# 9. PRACTICAL EXERCISES
+
+### Exercise 1 — Account status
+
+Retrieve an existing user and inspect:
+
+- `is_active`
+- `is_staff`
+- `is_superuser`
+
+Change the user's staff status and save the changes.
+
+### Exercise 2 — Product permissions
+
+Retrieve the following permissions:
+
+- `view_product`
+- `add_product`
+- `change_product`
+- `delete_product`
+
+### Exercise 3 — Direct permission assignment
+
+Give a user permission to view and add products.
+
+Verify the permissions using `has_perm()`.
+
+### Exercise 4 — Group management
+
+Create a group named `Inventory Managers`.
+
+Assign it permission to view and change products.
+
+Add a user to the group.
+
+Verify the user's permissions.
+
+### Exercise 5 — Permission removal
+
+Remove the user from the group.
+
+Check whether the group permissions are still available to that user.
+
+---
+
+# 10. IMPORTANT TAKEAWAYS
+
+1. `is_active` determines whether an account is active.
+2. `is_staff` controls eligibility to access Django's admin site.
+3. `is_superuser` grants all permissions.
+4. Django automatically creates four default model permissions.
+5. `has_perm()` checks an individual permission.
+6. `has_perms()` checks multiple permissions.
+7. Groups allow permissions to be assigned to multiple users.
+8. Users can receive permissions directly or through groups.
+9. Django permissions and DRF permission classes work together, but they are not the same mechanism.
+
+## NEXT TOPIC
+
+**Topic 14.4 — Understanding Django REST Framework Permission Classes**
+
+We will learn how to protect API endpoints using:
+
+- `AllowAny`
+- `IsAuthenticated`
+- `IsAdminUser`
+- `IsAuthenticatedOrReadOnly`
+- Custom permissions
+
+We will then apply these concepts to our eCommerce API.
