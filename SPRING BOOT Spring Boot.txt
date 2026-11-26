@@ -1,0 +1,37 @@
+----SPRING BOOT----
+Spring Boot ia a popular Framework for building Java Applications
+
+It consists of Modules each designed to handle specific task.
+
+These modules are broadly categorized into few different layers
+CORE -- Handling Dependency Injections, Managing Objects
+WEB -- Building Web Appplications
+DATA -- Working with Databases
+AOP (Aspect Oriented Programming) -- Login, Security features
+TEST -- Testing Spring Components
+
+
+NOTE: Dependency Injections
+Classes depending on other classes. Instead of one class
+creating its own dependency the spring container supplies it, 
+Usually through the constructor...This is called Dependency Injection
+
+We would also be looking at Database Integration with Spring Data JPA
+"JPA" (Jakarta Persistence API)
+'Jakarta EE is an open-source collection of standard Java specifications and APIs. Its used to build web, cloud, an enterprise server applications on top of standard Java
+
+This is our first course outline:
+*Introduction to SPRING BOOT
+*Setting up your development environment
+*Create Spring Boot Project
+*Undertanding the Projact Structure
+*Managing Dependencies
+*Building and Running your application
+*Using Spring Boot Dev Tools
+
+BUILD TOOLS 
+Build tools Manages dependencies, compiles code, run tests,
+& package applications
+
+We have MAVEN & GRADLE
+We will work with MAVEN
